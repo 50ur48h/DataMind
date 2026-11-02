@@ -183,7 +183,7 @@ export function EvidencePanel({
 
   const took = duration(execution.duration_ms);
   return (
-    <div className="grid animate-fade-up gap-2.5 rounded-md border border-border-soft bg-background/70 p-3">
+    <div className="grid min-w-0 animate-fade-up grid-cols-[minmax(0,1fr)] gap-2.5 rounded-md border border-border-soft bg-background/70 p-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted-foreground">
         {execution.status === "ok" && <Fact icon={<Rows3 aria-hidden="true" />}>{rowSummary(execution)}</Fact>}
         {took && <Fact icon={<Clock aria-hidden="true" />}>{took}</Fact>}

@@ -291,7 +291,8 @@
     transition: background-color 0.35s ease;
   }
   h1, h2, h3, p, figure { margin: 0; }
-  code { font-family: var(--font-mono); font-size: 0.87em; }
+  code { font-family: var(--font-mono); font-size: 0.87em; font-variant-ligatures: none; }
+  pre { font-variant-ligatures: none; }
   table { font-variant-numeric: tabular-nums; }
   ::selection { background: var(--accent-soft); }
   * { scrollbar-width: thin; scrollbar-color: var(--muted-2) transparent; }
