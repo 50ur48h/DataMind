@@ -1,47 +1,50 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
+import "@fontsource-variable/inter";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/jetbrains-mono";
+
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/lib/auth/session";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
+import { PALETTE_STORAGE_KEY, THEME_STORAGE_KEY } from "@/lib/theme";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "DataMind",
-  description: "AI-native data analysis platform",
+  description: "Ask your business data a question in plain English, and get an answer you can check.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f4f6f1",
 };
 
 /**
- * Set the theme before the first paint (D-046).
+ * Set the palette and light/dark before the first paint (D-046).
  *
- * **This is the one place the app injects a script, and it is worth the
- * exception.** React cannot help here by construction: the attribute has to be
- * on `<html>` before the browser paints anything, and the earliest React can run
- * is after hydration — several hundred milliseconds during which someone who
- * chose dark is looking at a white screen. Every theme toggle on the web solves
- * it this way.
- *
- * It is safe to read as `dangerouslySetInnerHTML` because nothing in it is
- * dynamic: the only interpolation is `THEME_STORAGE_KEY`, a compile-time
- * constant from our own module, and the script writes an attribute rather than
- * any markup. It reads storage, sets one attribute, and stops.
- *
- * Wrapped in try/catch because a browser with site data blocked *throws* on
- * `localStorage` rather than returning null, and an exception here would run
- * before anything else on the page.
+ * React cannot help here by construction: the attributes have to be on
+ * `<html>` before the browser paints anything, and the earliest React can run is
+ * after hydration. Nothing in it is dynamic — the only interpolations are two
+ * compile-time constants from our own module — and it writes attributes rather
+ * than markup. Wrapped in try/catch because a browser with site data blocked
+ * throws on `localStorage` rather than returning null.
  */
-const THEME_SCRIPT = `try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(t==="dark"){document.documentElement.setAttribute("data-theme","dark")}}catch(e){}`;
+const THEME_SCRIPT = `try{var d=document.documentElement,t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)}),p=localStorage.getItem(${JSON.stringify(PALETTE_STORAGE_KEY)});if(t==="dark"){d.setAttribute("data-theme","dark")}if(p&&p!=="sage"&&/^[a-z]+$/.test(p)){d.setAttribute("data-palette",p)}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // `suppressHydrationWarning` because the script above legitimately changes
-    // this element between the server's HTML and hydration. It is scoped to
-    // `<html>` itself and does not extend to anything rendered inside it.
+    // this element between the server's HTML and hydration.
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <TooltipProvider delayDuration={300}>
+          <SessionProvider>{children}</SessionProvider>
+        </TooltipProvider>
+        <Toaster />
       </body>
     </html>
   );

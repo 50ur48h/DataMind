@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import { Table2 } from "lucide-react";
 import { use } from "react";
 
 import { CatalogBrowser } from "@/components/screens/catalog";
 import { SignIn } from "@/components/screens/sign-in";
-import { Button } from "@/components/ui/button";
 import { Page, PageHeader } from "@/components/ui/page";
 import { useSession } from "@/lib/auth/session";
 import { useOrgRole } from "@/lib/use-org-role";
@@ -20,15 +19,12 @@ export default function CatalogPage({
   const { role } = useOrgRole(orgId);
 
   return (
-    <Page>
+    <Page wide>
       <PageHeader
         title="Catalog"
         subtitle="What this database holds, and what may be seen of it."
-        action={
-          <Link href={`/orgs/${orgId}/data-sources`}>
-            <Button>Back</Button>
-          </Link>
-        }
+        icon={<Table2 />}
+        back={{ href: `/orgs/${orgId}/data-sources`, label: "Data sources" }}
       />
       {session.who ? (
         <CatalogBrowser orgId={orgId} dataSourceId={dataSourceId} role={role} />
