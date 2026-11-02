@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Members } from "./members";
@@ -69,6 +69,99 @@ describe("<Members />", () => {
 
     expect(await screen.findByText("alice@example.com")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Send invite" })).not.toBeInTheDocument();
+  });
+});
+
+describe("asking before anything changes", () => {
+  /**
+   * Removing someone and changing a role both take effect at once, and the
+   * select fires on a single keystroke — so each asks first, and nothing is
+   * sent until the Admin says yes.
+   */
+  function routeFetch() {
+    const calls: { url: string; init: RequestInit }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init: RequestInit = {}) => {
+        calls.push({ url, init });
+        if (init.method && init.method !== "GET") {
+          return Promise.resolve(new Response(null, { status: 204 }));
+        }
+        const body = url.includes("/recovery-grants") ? [] : MEMBERS;
+        return Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }),
+    );
+    return calls;
+  }
+
+  const writes = (calls: { url: string; init: RequestInit }[]) =>
+    calls.filter((call) => call.init.method && call.init.method !== "GET");
+
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
+  });
+
+  it("removes someone only once the Admin confirms", async () => {
+    const calls = routeFetch();
+
+    render(<Members orgId="org1" role="admin" />);
+
+    const bob = (await screen.findByText("Bob")).closest("li")!;
+    fireEvent.click(within(bob).getByRole("button", { name: "Remove" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Remove Bob?")).toBeInTheDocument();
+    expect(writes(calls)).toHaveLength(0);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+
+    await waitFor(() => expect(writes(calls)).toHaveLength(1));
+    expect(writes(calls)[0]?.url).toContain("/v1/orgs/org1/members/u2");
+    expect(writes(calls)[0]?.init.method).toBe("DELETE");
+  });
+
+  it("leaves a role alone when the Admin cancels", async () => {
+    const calls = routeFetch();
+
+    render(<Members orgId="org1" role="admin" />);
+
+    const bob = (await screen.findByText("Bob")).closest("li")!;
+    const select = within(bob).getByLabelText("Change role");
+    select.focus();
+    fireEvent.change(select, { target: { value: "contributor" } });
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Make Bob a contributor?")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(writes(calls)).toHaveLength(0);
+    expect(select).toHaveValue("reader");
+    // Back where the keyboard was, not dropped at the top of the page.
+    await waitFor(() => expect(select).toHaveFocus());
+  });
+
+  it("changes a role once the Admin confirms", async () => {
+    const calls = routeFetch();
+
+    render(<Members orgId="org1" role="admin" />);
+
+    const bob = (await screen.findByText("Bob")).closest("li")!;
+    fireEvent.change(within(bob).getByLabelText("Change role"), {
+      target: { value: "contributor" },
+    });
+    fireEvent.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Change role" }),
+    );
+
+    await waitFor(() => expect(writes(calls)).toHaveLength(1));
+    expect(writes(calls)[0]?.init.method).toBe("PATCH");
+    expect(JSON.parse(String(writes(calls)[0]?.init.body))).toEqual({ role: "contributor" });
   });
 });
 
