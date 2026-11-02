@@ -23,18 +23,19 @@
  *      replaced with a generic message.
  */
 
+import { BookOpen, CircleAlert, FileText, FileUp, RotateCw, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge, type Tone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { Row, Stack } from "@/components/ui/page";
 import { SkeletonList } from "@/components/ui/skeleton";
+import { Hint } from "@/components/ui/tooltip";
 import { createApi, type KnowledgeDocument } from "@/lib/api-client";
 import { useSession } from "@/lib/auth/session";
-
-import styles from "./documents.module.css";
+import { cn } from "@/lib/utils";
 
 /** What the API's `extract` module accepts. Mirrored for the file picker only. */
 const ACCEPT = ".md,.markdown,.txt,.text,.pdf";
@@ -42,7 +43,13 @@ const ACCEPT = ".md,.markdown,.txt,.text,.pdf";
 const STATUS_TONES: Record<string, Tone> = {
   indexed: "mint",
   failed: "rose",
-  pending: "neutral",
+  pending: "peach",
+};
+
+const KINDS: Record<string, string> = {
+  "text/markdown": "Markdown",
+  "text/plain": "Plain text",
+  "application/pdf": "PDF",
 };
 
 /**
@@ -83,6 +90,20 @@ function indexedFraction(document: KnowledgeDocument): number | null {
   return Math.min(1, document.embedded_count / document.chunk_count);
 }
 
+/** When a document arrived, as a date. The API's own string if it is not one. */
+function added(timestamp: string): string {
+  const parsed = new Date(timestamp);
+  return Number.isNaN(parsed.getTime())
+    ? timestamp
+    : parsed.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function Documents({ orgId, role }: { orgId: string; role: string | null }) {
   const session = useSession();
   const api = useMemo(() => createApi(session.getToken), [session.getToken]);
@@ -96,6 +117,7 @@ export function Documents({ orgId, role }: { orgId: string; role: string | null 
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   const load = useCallback(async () => {
@@ -131,6 +153,11 @@ export function Documents({ orgId, role }: { orgId: string; role: string | null 
     }
   };
 
+  const clearFile = () => {
+    setFile(null);
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
   const upload = async () => {
     if (!file) return;
     await run(async () => {
@@ -144,37 +171,113 @@ export function Documents({ orgId, role }: { orgId: string; role: string | null 
     });
   };
 
+  const failure = (message: string) => (
+    <div className="flex animate-fade-up items-start gap-3 rounded-md bg-bad-soft px-4 py-3 text-[13.5px] text-bad-ink">
+      <CircleAlert aria-hidden="true" className="mt-[3px] size-4 shrink-0" />
+      <p role="alert" className="min-w-0 [overflow-wrap:anywhere]">
+        {message}
+      </p>
+    </div>
+  );
+
   return (
-    <Stack>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       {canWrite ? (
         <Card
           title="Add a document"
           subtitle="Markdown, plain text, or a PDF with a text layer. Scanned pages need OCR first."
         >
-          <div className={styles.upload}>
-            <label className={styles.field}>
-              <span className={styles.label}>File</span>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+            <label
+              className={cn(
+                "relative flex cursor-pointer items-center gap-4 rounded-lg border border-dashed px-4 py-4 transition-colors has-[input:focus-visible]:border-brand has-[input:focus-visible]:ring-[3px] has-[input:focus-visible]:ring-brand-soft sm:px-5",
+                dragging
+                  ? "border-brand bg-brand-soft/50"
+                  : "border-faint bg-surface-2/40 hover:border-brand hover:bg-brand-soft/25",
+              )}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragging(false);
+                const dropped = event.dataTransfer.files[0];
+                if (dropped) setFile(dropped);
+              }}
+            >
               <input
                 ref={fileInput}
-                className={styles.file}
+                className="sr-only"
                 type="file"
                 accept={ACCEPT}
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
+              <span
+                aria-hidden="true"
+                className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-ink [&_svg]:size-5"
+              >
+                <FileUp />
+              </span>
+              <span className="grid min-w-0 flex-1 gap-0.5">
+                <span className="text-[14px] font-medium text-text">
+                  {file ? "Drop another file, or choose a different one" : "Drop a file here, or choose one"}
+                </span>
+                <span className="text-[12.5px] text-muted-foreground">.md, .txt or .pdf</span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="hidden h-8 shrink-0 items-center rounded-sm border border-border bg-surface px-3 text-[13px] font-medium text-text shadow-[0_1px_2px_rgba(var(--shadow-rgb),.05)] sm:inline-flex"
+              >
+                {file ? "Change file" : "Choose file"}
+              </span>
             </label>
-            <div className={styles.field}>
-              <Input
-                label="Title (optional)"
-                value={title}
-                placeholder="Defaults to the file name"
-                onChange={(event) => setTitle(event.target.value)}
-              />
+
+            {file && (
+              <div className="flex animate-fade-up items-center gap-3 rounded-md border border-border-soft bg-surface px-3 py-2.5">
+                <FileText aria-hidden="true" className="size-4 shrink-0 text-brand-ink" />
+                <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-text">
+                  {file.name}
+                </span>
+                <span className="shrink-0 text-[12.5px] text-muted-foreground tabular-nums">
+                  {size(file.size)}
+                </span>
+                <Hint label="Clear the chosen file">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Clear the chosen file"
+                    disabled={busy}
+                    onClick={clearFile}
+                  >
+                    <X />
+                  </Button>
+                </Hint>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <Input
+                  label="Title (optional)"
+                  value={title}
+                  placeholder="Defaults to the file name"
+                  onChange={(event) => setTitle(event.target.value)}
+                />
+              </div>
+              <Button
+                variant="primary"
+                className="h-10 sm:px-5"
+                onClick={() => void upload()}
+                disabled={busy || !file}
+              >
+                <Upload />
+                {busy ? "Working…" : "Upload"}
+              </Button>
             </div>
-            <Button onClick={() => void upload()} disabled={busy || !file}>
-              {busy ? "Working…" : "Upload"}
-            </Button>
+            {error ? failure(error) : null}
           </div>
-          {error ? <p className={styles.error}>{error}</p> : null}
         </Card>
       ) : null}
 
@@ -183,29 +286,93 @@ export function Documents({ orgId, role }: { orgId: string; role: string | null 
         subtitle="What this organization has written down. The agent reads these to learn what a term means here."
       >
         {documents === null ? (
-          <SkeletonList rows={2} label="Loading documents" />
+          <SkeletonList rows={2} avatar label="Loading documents" />
         ) : documents.length === 0 ? (
-          <p className={styles.empty}>
+          <EmptyState
+            icon={<BookOpen />}
+            title="No documents yet"
+            action={canWrite ? undefined : <span>A Contributor or Admin can add one.</span>}
+          >
             {canWrite
-              ? "No documents yet. Upload a policy or a definition and the agent will use it."
-              : "No documents yet. A Contributor or Admin can add one."}
-          </p>
+              ? "Upload a policy or a definition and the agent will use it."
+              : "Policies, definitions and notes this organization writes down will appear here."}
+          </EmptyState>
         ) : (
-          <ul className={styles.list}>
-            {documents.map((document) => (
-              <li key={document.id} className={styles.item}>
-                <div className={styles.itemHead}>
-                  <div>
-                    <h3 className={styles.title}>{document.title}</h3>
-                    <p className={styles.meta}>
-                      {indexingSummary(document)}
-                    </p>
+          <ul className="-mx-2 grid">
+            {documents.map((document, index) => {
+              const fraction = indexedFraction(document);
+              return (
+                <li
+                  key={document.id}
+                  className="flex animate-fade-up items-start gap-3.5 border-b border-border-soft px-2 py-4 first:pt-1 last:border-b-0 last:pb-1"
+                  style={{ animationDelay: `${index * 40}ms` }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "grid size-10 shrink-0 place-items-center rounded-md [&_svg]:size-[18px]",
+                      document.status === "failed"
+                        ? "bg-bad-soft text-bad-ink"
+                        : "bg-brand-soft text-brand-ink",
+                    )}
+                  >
+                    <FileText />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <h3 className="text-[14.5px] leading-snug font-semibold text-text [overflow-wrap:anywhere]">
+                            {document.title}
+                          </h3>
+                          <Badge tone={STATUS_TONES[document.status] ?? "neutral"}>
+                            {document.status}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-[13px] text-text-2">{indexingSummary(document)}</p>
+                        <p className="mt-0.5 text-[12px] text-muted-foreground">
+                          {KINDS[document.mime] ?? document.mime} · Added {added(document.created_at)}
+                        </p>
+                      </div>
+                      {canWrite ? (
+                        <div className="-mr-1 flex shrink-0 items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              void run(async () => {
+                                await api.reindexDocument(orgId, document.id);
+                              })
+                            }
+                            disabled={busy}
+                          >
+                            <RotateCw />
+                            Re-index
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-bad-soft hover:text-bad-ink"
+                            onClick={() =>
+                              void run(async () => {
+                                await api.removeDocument(orgId, document.id);
+                              })
+                            }
+                            disabled={busy}
+                          >
+                            <Trash2 />
+                            Remove
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+
                     {/* Drawn only from `chunk_count` and `embedded_count`, and
                         only when both exist. The words above say the same thing
                         and are what a reader with no colour or no meter gets. */}
-                    {indexedFraction(document) !== null && (
+                    {fraction !== null && (
                       <span
-                        className={styles.meter}
+                        className="mt-2.5 block h-1.5 max-w-[320px] overflow-hidden rounded-full bg-surface-2"
                         role="progressbar"
                         aria-valuemin={0}
                         aria-valuemax={document.chunk_count}
@@ -213,51 +380,28 @@ export function Documents({ orgId, role }: { orgId: string; role: string | null 
                         aria-label={`${document.title}: passages searchable by meaning`}
                       >
                         <span
-                          className={styles.meterFill}
-                          style={{ width: `${(indexedFraction(document) ?? 0) * 100}%` }}
+                          className="block h-full rounded-full bg-brand transition-[width] duration-500 ease-out"
+                          style={{ width: `${fraction * 100}%` }}
                         />
                       </span>
                     )}
-                  </div>
-                  <Row>
-                    <Badge tone={STATUS_TONES[document.status] ?? "neutral"}>
-                      {document.status}
-                    </Badge>
-                    {canWrite ? (
-                      <span className={styles.actions}>
-                        <Button
-                          onClick={() =>
-                            void run(async () => {
-                              await api.reindexDocument(orgId, document.id);
-                            })
-                          }
-                          disabled={busy}
-                        >
-                          Re-index
-                        </Button>
-                        <Button
-                          onClick={() =>
-                            void run(async () => {
-                              await api.removeDocument(orgId, document.id);
-                            })
-                          }
-                          disabled={busy}
-                        >
-                          Remove
-                        </Button>
-                      </span>
+
+                    {/* The one thing on this row a person has to act on, so it
+                        is not styled as another line of metadata. */}
+                    {document.failure_reason ? (
+                      <div className="mt-3 flex items-start gap-2.5 rounded-md bg-bad-soft/60 px-3.5 py-2.5 text-[13px] leading-relaxed text-text-2">
+                        <CircleAlert aria-hidden="true" className="mt-[3px] size-4 shrink-0 text-bad-ink" />
+                        <p className="min-w-0 [overflow-wrap:anywhere]">{document.failure_reason}</p>
+                      </div>
                     ) : null}
-                  </Row>
-                </div>
-                {document.failure_reason ? (
-                  <p className={styles.failure}>{document.failure_reason}</p>
-                ) : null}
-              </li>
-            ))}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
-        {!canWrite && error ? <p className={styles.error}>{error}</p> : null}
+        {!canWrite && error ? <div className="mt-4">{failure(error)}</div> : null}
       </Card>
-    </Stack>
+    </div>
   );
 }

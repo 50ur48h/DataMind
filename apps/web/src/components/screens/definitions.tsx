@@ -53,13 +53,33 @@
  *      being listed puts nothing back into force, and the card says so.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  Download,
+  Funnel,
+  History as HistoryIcon,
+  Inbox,
+  Info,
+  Lock,
+  PenLine,
+  Pencil,
+  Plus,
+  ShieldCheck,
+  Table2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select } from "@/components/ui/input";
-import { Row, Stack } from "@/components/ui/page";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input, controlClass } from "@/components/ui/input";
 import { SkeletonList } from "@/components/ui/skeleton";
 import {
   createApi,
@@ -69,8 +89,7 @@ import {
   type SemanticDefinition,
 } from "@/lib/api-client";
 import { useSession } from "@/lib/auth/session";
-
-import styles from "./definitions.module.css";
+import { cn } from "@/lib/utils";
 
 /**
  * The operators the critic can check, in the API's own order.
@@ -311,6 +330,298 @@ export function describeVersion(version: DefinitionVersion): string {
       ? "enforced nothing"
       : `enforced ${version.required_filters.map(describeFilter).join("; ")}`;
   return `v${version.version} — ${what[version.change] ?? version.change}, ${filters}`;
+}
+
+// ---------------------------------------------------------------------------
+// Presentation. Everything below this line and above `Definitions` draws; none
+// of it decides anything.
+// ---------------------------------------------------------------------------
+
+/** A refusal, in the API's own words, beside the action that earned it. */
+function Failure({ children }: { children: string }) {
+  return (
+    <div className="flex animate-fade-up items-start gap-3 rounded-md bg-bad-soft px-4 py-3 text-[13.5px] leading-relaxed text-bad-ink">
+      <CircleAlert aria-hidden="true" className="mt-[3px] size-4 shrink-0" />
+      <p role="alert" className="min-w-0 [overflow-wrap:anywhere]">
+        {children}
+      </p>
+    </div>
+  );
+}
+
+function Notice({ children }: { children: string }) {
+  return (
+    <div className="flex animate-fade-up items-start gap-3 rounded-md bg-surface-2 px-4 py-3 text-[13.5px] leading-relaxed text-text-2">
+      <CircleCheck aria-hidden="true" className="mt-[3px] size-4 shrink-0 text-brand-ink" />
+      <p className="min-w-0 [overflow-wrap:anywhere]">{children}</p>
+    </div>
+  );
+}
+
+/**
+ * What accepting, saving or reinstating will do, said before the click.
+ *
+ * The two outcomes are genuinely different, so they do not look the same.
+ * "Binds" is the stronger claim and carries the stronger colour.
+ */
+function Consequence({ binds, children }: { binds: boolean; children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-2.5 rounded-md px-3.5 py-2.5 text-[13px] leading-relaxed",
+        binds ? "bg-good-soft text-text-2" : "bg-surface-2 text-text-2",
+      )}
+    >
+      {binds ? (
+        <ShieldCheck aria-hidden="true" className="mt-[2px] size-4 shrink-0 text-good-ink" />
+      ) : (
+        <Info aria-hidden="true" className="mt-[2px] size-4 shrink-0 text-muted-foreground" />
+      )}
+      <p className="min-w-0">{children}</p>
+    </div>
+  );
+}
+
+/**
+ * The one field on a definition that reaches whoever reads the answer, so it
+ * is set apart from the prose rather than sitting inside it. Warm rather than
+ * red: a caveat is what makes a number usable, not a warning that it is broken.
+ */
+function Caveat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <p className="flex items-start gap-2.5 rounded-md bg-warn-soft px-3.5 py-2.5 text-[13.5px] leading-relaxed text-text-2">
+      <TriangleAlert aria-hidden="true" className="mt-[3px] size-4 shrink-0 text-warn-ink" />
+      <span className="min-w-0">
+        <strong className="font-semibold text-warn-ink">{label}</strong> {children}
+      </span>
+    </p>
+  );
+}
+
+function Formula({ children }: { children: string }) {
+  return (
+    <p>
+      <code className="inline-block max-w-full rounded-sm bg-code px-2.5 py-1 font-mono text-[12.5px] leading-relaxed text-code-ink [overflow-wrap:anywhere]">
+        {children}
+      </code>
+    </p>
+  );
+}
+
+/**
+ * The filters are the half a check can act on, so they are set apart from the
+ * sentence rather than run together with it.
+ */
+function FilterList({
+  filters,
+  onRemove,
+  busy = false,
+}: {
+  filters: RequiredFilter[];
+  onRemove?: ((index: number) => void) | undefined;
+  busy?: boolean | undefined;
+}) {
+  return (
+    <ul className="flex flex-wrap gap-2">
+      {filters.map((filter, index) => (
+        <li
+          key={`${filter.table}.${filter.column}.${index}`}
+          className={cn(
+            "inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-surface py-1 pl-2.5 text-[12.5px] text-text-2",
+            onRemove ? "pr-1" : "pr-3",
+          )}
+        >
+          <Funnel aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 [overflow-wrap:anywhere]">{describeFilter(filter)}</span>
+          {onRemove ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 rounded-full px-2 text-[12px]"
+              onClick={() => onRemove(index)}
+              disabled={busy}
+            >
+              <X className="size-3" />
+              Remove
+            </Button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const labelClass = "text-[13px] font-medium text-text-2";
+
+/** A longer field, for the sentence a definition is. */
+function TextField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string | undefined;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="grid gap-1.5">
+      <label className={labelClass} htmlFor={id}>
+        {label}
+      </label>
+      <textarea
+        id={id}
+        rows={2}
+        className={cn(controlClass, "h-auto min-h-[66px] resize-y py-2 leading-relaxed")}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
+  );
+}
+
+/** The operators by the words the prompt uses, sending the API's own codes. */
+function OperatorSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="grid gap-1.5">
+      <label className={labelClass} htmlFor={id}>
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          id={id}
+          className={cn(controlClass, "cursor-pointer appearance-none pr-9")}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {OPERATORS.map((operator) => (
+            <option key={operator} value={operator}>
+              {READABLE[operator] ?? operator}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One filter being written. `prefixed` names every field "Filter …", for the
+ * card that sits on a screen which already has a filter editor of its own.
+ */
+function FilterFields({
+  value,
+  onChange,
+  onAdd,
+  busy,
+  addLabel,
+  prefixed = false,
+  wide = false,
+}: {
+  value: RequiredFilter;
+  onChange: (patch: Partial<RequiredFilter>) => void;
+  onAdd: () => void;
+  busy: boolean;
+  addLabel: string;
+  prefixed?: boolean | undefined;
+  wide?: boolean | undefined;
+}) {
+  return (
+    <div
+      className={cn(
+        "grid items-end gap-3 sm:grid-cols-2",
+        wide &&
+          "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,10rem)_minmax(0,1fr)_auto]",
+      )}
+    >
+      <Input
+        label={prefixed ? "Filter table" : "Table"}
+        value={value.table}
+        onChange={(event) => onChange({ table: event.target.value })}
+      />
+      <Input
+        label={prefixed ? "Filter column" : "Column"}
+        value={value.column}
+        onChange={(event) => onChange({ column: event.target.value })}
+      />
+      <OperatorSelect
+        label={prefixed ? "Filter must be" : "Must be"}
+        value={value.op}
+        onChange={(op) => onChange({ op })}
+      />
+      <Input
+        label={prefixed ? "Filter values" : "Values"}
+        value={value.values.join(", ")}
+        placeholder="completed"
+        onChange={(event) => onChange({ values: words(event.target.value) })}
+      />
+      <Button
+        className={cn("h-10 justify-self-start", !wide && "sm:col-span-2")}
+        onClick={onAdd}
+        disabled={busy}
+      >
+        <Plus />
+        {addLabel}
+      </Button>
+    </div>
+  );
+}
+
+/** Every version a definition has been in force in, as the API lists them. */
+function VersionHistory({
+  versions,
+  current,
+  empty,
+}: {
+  versions: DefinitionVersion[];
+  current: number;
+  empty: string;
+}) {
+  return (
+    <div className="animate-fade-up rounded-md bg-surface-2/60 px-4 py-3.5">
+      <ol className="grid gap-2.5 border-l border-border pl-4">
+        {versions.length === 0 ? (
+          <li className="text-[13px] leading-relaxed text-muted-foreground">{empty}</li>
+        ) : (
+          versions.map((version) => (
+            <li
+              key={version.version}
+              className={cn(
+                "relative text-[13px] leading-relaxed before:absolute before:top-[6px] before:-left-[21.5px] before:size-[10px] before:rounded-full before:border-2 before:border-surface-2",
+                version.version === current
+                  ? "font-medium text-text before:bg-brand"
+                  : "text-text-2 before:bg-faint",
+              )}
+            >
+              {describeVersion(version)}
+            </li>
+          ))
+        )}
+      </ol>
+    </div>
+  );
+}
+
+const itemTitle = "font-serif text-[17px] leading-snug font-semibold text-text [overflow-wrap:anywhere]";
+
+function counted(count: number): string {
+  return `${count} ${count === 1 ? "definition" : "definitions"}`;
 }
 
 export function Definitions({
@@ -613,263 +924,76 @@ export function Definitions({
 
   if (!isAdmin) {
     return (
-      <Card title="Definitions">
-        <p className={styles.empty}>
-          Only an Admin can review what a metric means here, because an accepted
-          definition constrains the queries this platform will run.
-        </p>
-      </Card>
+      <EmptyState icon={<Lock />} title="Definitions are reviewed by an Admin">
+        Only an Admin can review what a metric means here, because an accepted definition
+        constrains the queries this platform will run.
+      </EmptyState>
     );
   }
 
+  const waiting = proposals?.length ?? 0;
+
   return (
-    <Stack>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       {/* One error *state* for the whole screen, so the same sentence is never
           on the page twice — but it renders beside the action that earned it.
           A save refused from the editor at the bottom of this page used to put
           its message up here, where nobody editing was looking. */}
-      {error && errorAt === null ? <p className={styles.error}>{error}</p> : null}
+      {error && errorAt === null ? <Failure>{error}</Failure> : null}
 
+      {/* The inbox "Questions for you" in the sidebar opens on (B-059). First on
+          the page because nothing in it constrains anything until an Admin
+          answers, and an answer is the one thing only this screen can give. */}
       <Card
-        title="Import from a metric table"
-        subtitle="Most warehouses already carry their definitions. Nothing imported takes effect until you accept it."
-      >
-        <div className={styles.importForm}>
-          {/* "Metric table", not "Table": the filter editor below has a Table
-              field of its own, and two controls with one name is how somebody
-              types a column into the wrong box. */}
-          <Input
-            label="Metric table"
-            value={table}
-            placeholder="meta_metric"
-            onChange={(event) => setTable(event.target.value)}
-          />
-          <Input
-            label="Name column"
-            value={nameColumn}
-            placeholder="metric_key"
-            onChange={(event) => setNameColumn(event.target.value)}
-          />
-          <Input
-            label="Definition column"
-            value={descriptionColumn}
-            placeholder="definition_text"
-            onChange={(event) => setDescriptionColumn(event.target.value)}
-          />
-          <Input
-            label="Formula column (optional)"
-            value={expressionColumn}
-            placeholder="calculation"
-            onChange={(event) => setExpressionColumn(event.target.value)}
-          />
-          {/* Worth more than it looks. A definition is found by name and synonym,
-              so a metric imported without the words people use is one no question
-              reaches — it binds nothing however carefully its filters are
-              written (B-085). Most metric tables already have this column. */}
-          <Input
-            label="Names column (optional)"
-            value={synonymsColumn}
-            placeholder="metric_name — what people call it"
-            onChange={(event) => setSynonymsColumn(event.target.value)}
-          />
-          {/* The customer's own limits on what each metric may be used to claim.
-              Where they exist they are usually the most carefully written column
-              in the table, and until now there was nowhere to put them. */}
-          <Input
-            label="Caveat column (optional)"
-            value={caveatColumn}
-            placeholder="what an answer must disclose"
-            onChange={(event) => setCaveatColumn(event.target.value)}
-          />
-          <Button
-            onClick={() => void importFromTable()}
-            disabled={busy || !table.trim() || !nameColumn.trim() || !descriptionColumn.trim()}
-          >
-            {busy ? "Working…" : "Import"}
-          </Button>
-        </div>
-        {notice && noticeAt === null ? <p className={styles.notice}>{notice}</p> : null}
-      </Card>
-
-      {/* **B-169.** `createDefinition` was on the API client from the start and
-          no screen called it, so a source whose warehouse has no metric table —
-          which is most of them, and every one somebody is trying the product on
-          for the first time — could not be given a definition at all without a
-          bearer token and a script. */}
-      <Card
-        title="Write one by hand"
-        subtitle="For a database that does not already carry its definitions. Unlike an import, this takes effect as soon as you save it."
-      >
-        <div className={styles.importForm}>
-          <Input
-            label="Name"
-            value={written.name}
-            placeholder="net_revenue"
-            onChange={(event) => setWritten({ ...written, name: event.target.value })}
-          />
-          <Input
-            label="What it means"
-            value={written.description}
-            placeholder="Sales after discounts, excluding cancelled orders."
-            onChange={(event) => setWritten({ ...written, description: event.target.value })}
-          />
-          <Input
-            label="Formula (optional)"
-            value={written.expression}
-            placeholder="sum(orders.total_amount)"
-            onChange={(event) => setWritten({ ...written, expression: event.target.value })}
-          />
-          <Input
-            label="Answers must say (optional)"
-            value={written.caveat}
-            placeholder="what an answer using this metric has to disclose"
-            onChange={(event) => setWritten({ ...written, caveat: event.target.value })}
-          />
-          {/* The same warning the import form carries, and it matters more here:
-              an imported definition at least answers to the label its own table
-              gave it, while a hand-written one answers to nothing but what is
-              typed in this box (B-085). */}
-          <Input
-            label="Also called"
-            value={written.synonyms}
-            placeholder="the words people use when they ask"
-            onChange={(event) => setWritten({ ...written, synonyms: event.target.value })}
-          />
-        </div>
-
-        {written.filters.length > 0 ? (
-          <ul className={styles.filters}>
-            {written.filters.map((filter, index) => (
-              <li key={`${filter.table}.${filter.column}.${index}`}>
-                {describeFilter(filter)}{" "}
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setWritten({
-                      ...written,
-                      filters: written.filters.filter((_, at) => at !== index),
-                    })
-                  }
-                  disabled={busy}
-                >
-                  Remove
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={styles.prose}>
-            With no filter this is prose: it reaches the model as guidance and the critic checks
-            nothing. Add one to make it bind.
-          </p>
-        )}
-
-        <div className={styles.filterForm}>
-          {/* Prefixed, for the reason the import form gives above: this card
-              puts a second filter editor on a screen that already has one, and
-              two controls with one name is how a column ends up in the wrong
-              box. */}
-          <Input
-            label="Filter table"
-            value={writtenFilter.table}
-            onChange={(event) => setWrittenFilter({ ...writtenFilter, table: event.target.value })}
-          />
-          <Input
-            label="Filter column"
-            value={writtenFilter.column}
-            onChange={(event) => setWrittenFilter({ ...writtenFilter, column: event.target.value })}
-          />
-          <Select
-            label="Filter must be"
-            options={OPERATORS}
-            value={writtenFilter.op}
-            onChange={(event) => setWrittenFilter({ ...writtenFilter, op: event.target.value })}
-          />
-          <Input
-            label="Filter values"
-            value={writtenFilter.values.join(", ")}
-            placeholder="completed"
-            onChange={(event) =>
-              setWrittenFilter({ ...writtenFilter, values: words(event.target.value) })
-            }
-          />
-          <Button
-            onClick={() => {
-              if (
-                !writtenFilter.table.trim() ||
-                !writtenFilter.column.trim() ||
-                writtenFilter.values.length === 0
-              ) {
-                return;
-              }
-              setWritten({ ...written, filters: [...written.filters, writtenFilter] });
-              setWrittenFilter(EMPTY_FILTER);
-            }}
-            disabled={busy}
-          >
-            Add this filter
-          </Button>
-        </div>
-
-        <Row>
-          <Button onClick={() => void writeOne()} disabled={busy || !canWrite(written)}>
-            {busy ? "Working…" : "Create definition"}
-          </Button>
-        </Row>
-        {/* Beside the action that earned it, like every other message here. */}
-        {notice && noticeAt === "written" ? <p className={styles.notice}>{notice}</p> : null}
-        {error && errorAt === "written" ? <p className={styles.error}>{error}</p> : null}
-      </Card>
-
-      <Card
-        title="Waiting for review"
+        id="questions"
+        className="scroll-mt-6"
+        title="Questions for you"
         subtitle="What the database says these metrics mean. None of it constrains anything yet."
+        action={waiting > 0 ? <Badge tone="peach">{waiting} waiting</Badge> : undefined}
       >
         {proposals === null ? (
           <SkeletonList rows={3} label="Loading definitions" />
         ) : proposals.length === 0 ? (
-          <p className={styles.empty}>Nothing waiting. Import a metric table to propose some.</p>
+          <p className="flex items-center gap-2.5 rounded-md bg-surface-2/60 px-4 py-3 text-[13.5px] text-muted-foreground">
+            <Inbox aria-hidden="true" className="size-4 shrink-0" />
+            Nothing waiting. Import a metric table to propose some.
+          </p>
         ) : (
-          <ul className={styles.list}>
-            {proposals.map((proposal) => {
+          <ul className="grid gap-4">
+            {proposals.map((proposal, index) => {
               const filters = staged[proposal.id] ?? [];
               const pending = draft[proposal.id] ?? EMPTY_FILTER;
+              const origin = describeProvenance(proposal.provenance);
               return (
-                <li key={proposal.id} className={styles.item}>
-                  <div className={styles.itemHead}>
-                    <div>
-                      <h3 className={styles.title}>{proposal.name}</h3>
-                      <p className={styles.meta}>{describeProvenance(proposal.provenance)}</p>
+                <li
+                  key={proposal.id}
+                  className="animate-fade-up rounded-lg border border-border bg-surface p-3.5 shadow-[0_1px_2px_rgba(var(--shadow-rgb),.05)] sm:p-5"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className={itemTitle}>{proposal.name}</h3>
+                      {origin ? (
+                        <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                          <Table2 aria-hidden="true" className="size-3.5 shrink-0" />
+                          {origin}
+                        </p>
+                      ) : null}
                     </div>
                     <Badge tone="peach">proposed</Badge>
                   </div>
 
-                  <p className={styles.description}>{proposal.description}</p>
-                  {proposal.expression ? (
-                    <p className={styles.expression}>
-                      <code>{proposal.expression}</code>
-                    </p>
-                  ) : null}
-                  {proposal.caveat ? (
-                    <p className={styles.caveat}>
-                      <strong>Answers must say:</strong> {proposal.caveat}
-                    </p>
-                  ) : null}
-                  {proposal.synonyms.length > 0 ? (
-                    <p className={styles.meta}>Also called: {proposal.synonyms.join(", ")}</p>
-                  ) : null}
+                  <div className="mt-3 grid gap-2.5">
+                    <p className="text-[14.5px] leading-relaxed text-prose">{proposal.description}</p>
+                    {proposal.expression ? <Formula>{proposal.expression}</Formula> : null}
+                    {proposal.caveat ? (
+                      <Caveat label="Answers must say:">{proposal.caveat}</Caveat>
+                    ) : null}
+                  </div>
 
-                  {filters.length > 0 ? (
-                    <ul className={styles.filters}>
-                      {filters.map((filter, index) => (
-                        <li key={`${filter.table}.${filter.column}.${index}`}>
-                          {describeFilter(filter)}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-
-                  <div className={styles.filterForm}>
+                  <div className="mt-4 grid gap-4 rounded-md bg-surface-2/60 p-3 sm:p-4">
+                    {/* Starts from the names the import found, so what the
+                        database said is what an Admin edits rather than retypes. */}
                     <Input
                       label="Also called"
                       value={alsoCalled[proposal.id] ?? proposal.synonyms.join(", ")}
@@ -881,53 +1005,35 @@ export function Definitions({
                         }))
                       }
                     />
-                  </div>
 
-                  <div className={styles.filterForm}>
-                    <Input
-                      label="Table"
-                      value={pending.table}
-                      onChange={(event) => editDraft(proposal.id, { table: event.target.value })}
-                    />
-                    <Input
-                      label="Column"
-                      value={pending.column}
-                      onChange={(event) => editDraft(proposal.id, { column: event.target.value })}
-                    />
-                    <Select
-                      label="Must be"
-                      options={OPERATORS}
-                      value={pending.op}
-                      onChange={(event) => editDraft(proposal.id, { op: event.target.value })}
-                    />
-                    <Input
-                      label="Values"
-                      value={pending.values.join(", ")}
-                      placeholder="completed"
-                      onChange={(event) =>
-                        editDraft(proposal.id, {
-                          values: event.target.value
-                            .split(",")
-                            .map((word) => word.trim())
-                            .filter((word) => word.length > 0),
-                        })
-                      }
-                    />
-                    <Button onClick={() => stageFilter(proposal.id)} disabled={busy}>
-                      Add filter
-                    </Button>
-                  </div>
+                    <div className="grid gap-2">
+                      <p className="text-[12.5px] font-medium text-muted-foreground">
+                        Required filters (optional)
+                      </p>
+                      <FilterFields
+                        wide
+                        value={pending}
+                        onChange={(patch) => editDraft(proposal.id, patch)}
+                        onAdd={() => stageFilter(proposal.id)}
+                        busy={busy}
+                        addLabel="Add filter"
+                      />
+                    </div>
 
-                  <p className={filters.length > 0 ? styles.binds : styles.prose}>
-                    {acceptanceSummary(filters)}
-                  </p>
+                    {filters.length > 0 ? <FilterList filters={filters} /> : null}
+
+                    <Consequence binds={filters.length > 0}>{acceptanceSummary(filters)}</Consequence>
+                  </div>
 
                   {errorAt === proposal.id && error ? (
-                    <p className={styles.error}>{error}</p>
+                    <div className="mt-4">
+                      <Failure>{error}</Failure>
+                    </div>
                   ) : null}
 
-                  <Row>
-                    <Button onClick={() => void accept(proposal)} disabled={busy}>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Button variant="primary" onClick={() => void accept(proposal)} disabled={busy}>
+                      {filters.length > 0 ? <ShieldCheck /> : <CircleCheck />}
                       {filters.length > 0 ? "Accept and enforce" : "Accept as prose"}
                     </Button>
                     <Button
@@ -938,9 +1044,10 @@ export function Definitions({
                       }
                       disabled={busy}
                     >
+                      <X />
                       Reject
                     </Button>
-                  </Row>
+                  </div>
                 </li>
               );
             })}
@@ -948,102 +1055,42 @@ export function Definitions({
         )}
       </Card>
 
-      {/* Hidden when there is nothing out of force, so an ordinary organization
-          never sees it — but present the moment there is something to bring
-          back, which is the half of B-094 that made a mis-click permanent. */}
-      {retired.length > 0 ? (
-        <Card
-          title="Out of force"
-          subtitle="Retired, and kept. None of this constrains anything or reaches the model; an answer checked against one is still explainable."
-        >
-          <ul className={styles.list}>
-            {retired.map((definition) => (
-              <li key={definition.id} className={styles.item}>
-                <div className={styles.itemHead}>
-                  <div>
-                    <h3 className={styles.title}>{definition.name}</h3>
-                    {definition.synonyms.length > 0 ? (
-                      <p className={styles.meta}>Also called: {definition.synonyms.join(", ")}</p>
-                    ) : null}
-                  </div>
-                  <Row>
-                    <Badge tone="neutral">v{definition.version}</Badge>
-                    <Badge tone="peach">retired</Badge>
-                  </Row>
-                </div>
-                <p className={styles.description}>{definition.description}</p>
-                {definition.required_filters.length > 0 ? (
-                  <ul className={styles.filters}>
-                    {definition.required_filters.map((filter, index) => (
-                      <li key={`${filter.table}.${filter.column}.${index}`}>
-                        {describeFilter(filter)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                <p className={styles.prose}>
-                  {definition.required_filters.length > 0
-                    ? "Reinstated, it binds again: a query that ignores its filters is blocked."
-                    : "Reinstated, it reaches the model as guidance. Nothing checks it."}
-                </p>
-
-                {errorAt === definition.id && error ? (
-                  <p className={styles.error}>{error}</p>
-                ) : null}
-
-                <Row>
-                  <Button onClick={() => void reinstate(definition)} disabled={busy}>
-                    {busy ? "Working…" : "Reinstate"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => void showHistory(definition)}
-                    disabled={busy}
-                  >
-                    {history[definition.id] ? "Hide history" : "History"}
-                  </Button>
-                </Row>
-
-                {history[definition.id] ? (
-                  <ul className={styles.filters}>
-                    {history[definition.id]!.length === 0 ? (
-                      <li>Nothing recorded.</li>
-                    ) : (
-                      history[definition.id]!.map((version) => (
-                        <li key={version.version}>{describeVersion(version)}</li>
-                      ))
-                    )}
-                  </ul>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
-
       <Card
         title="In force"
         subtitle="What the agent is told these metrics mean, and which of them the critic enforces."
+        action={
+          definitions && definitions.length > 0 ? (
+            <Badge>{counted(definitions.length)}</Badge>
+          ) : undefined
+        }
       >
         {definitions === null ? (
           <SkeletonList rows={3} label="Loading definitions" />
         ) : definitions.length === 0 ? (
-          <p className={styles.empty}>No definitions yet.</p>
+          <EmptyState icon={<ShieldCheck />} title="No definitions yet">
+            Accept a proposal or write one by hand, and it is listed here with what the critic
+            checks.
+          </EmptyState>
         ) : (
-          <ul className={styles.list}>
+          <ul className="grid">
             {definitions.map((definition) => {
               const open = editing === definition.id && edit !== null;
               const versions = history[definition.id];
               return (
-                <li key={definition.id} className={styles.item}>
-                  <div className={styles.itemHead}>
-                    <div>
-                      <h3 className={styles.title}>{definition.name}</h3>
+                <li
+                  key={definition.id}
+                  className="grid gap-3 border-b border-border-soft py-5 first:pt-0 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className={itemTitle}>{definition.name}</h3>
                       {definition.synonyms.length > 0 ? (
-                        <p className={styles.meta}>Also called: {definition.synonyms.join(", ")}</p>
+                        <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                          Also called: {definition.synonyms.join(", ")}
+                        </p>
                       ) : null}
                     </div>
-                    <Row>
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {/* The version is next to the badge because they answer
                           one question together: what is in force, and which
                           version of it. */}
@@ -1055,19 +1102,17 @@ export function Definitions({
                           currently delivering, and an overstated badge is the
                           thing this screen exists to avoid. */}
                       <Badge tone={badgeTone(definition)}>{badgeLabel(definition)}</Badge>
-                    </Row>
+                    </div>
                   </div>
 
                   {open && edit !== null ? (
-                    <>
-                      <div className={styles.importForm}>
-                        <Input
-                          label="What it means"
-                          value={edit.description}
-                          onChange={(event) =>
-                            setEdit({ ...edit, description: event.target.value })
-                          }
-                        />
+                    <div className="grid animate-fade-up gap-4 rounded-md border border-border-soft bg-surface-2/50 p-4">
+                      <TextField
+                        label="What it means"
+                        value={edit.description}
+                        onChange={(description) => setEdit({ ...edit, description })}
+                      />
+                      <div className="grid gap-4 sm:grid-cols-2">
                         <Input
                           label="Formula (optional)"
                           value={edit.expression}
@@ -1082,168 +1127,123 @@ export function Definitions({
                           placeholder="what an answer using this metric has to disclose"
                           onChange={(event) => setEdit({ ...edit, caveat: event.target.value })}
                         />
-                        <Input
-                          label="Also called"
-                          value={edit.synonyms}
-                          placeholder="the words people use when they ask"
-                          onChange={(event) => setEdit({ ...edit, synonyms: event.target.value })}
-                        />
                       </div>
+                      <Input
+                        label="Also called"
+                        value={edit.synonyms}
+                        placeholder="the words people use when they ask"
+                        onChange={(event) => setEdit({ ...edit, synonyms: event.target.value })}
+                      />
 
                       {edit.filters.length > 0 ? (
-                        <ul className={styles.filters}>
-                          {edit.filters.map((filter, index) => (
-                            <li key={`${filter.table}.${filter.column}.${index}`}>
-                              {describeFilter(filter)}{" "}
-                              <Button
-                                variant="ghost"
-                                onClick={() =>
-                                  setEdit({
-                                    ...edit,
-                                    filters: edit.filters.filter((_, at) => at !== index),
-                                  })
-                                }
-                                disabled={busy}
-                              >
-                                Remove
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
+                        <FilterList
+                          filters={edit.filters}
+                          busy={busy}
+                          onRemove={(index) =>
+                            setEdit({
+                              ...edit,
+                              filters: edit.filters.filter((_, at) => at !== index),
+                            })
+                          }
+                        />
                       ) : null}
 
-                      <div className={styles.filterForm}>
-                        <Input
-                          label="Table"
-                          value={editFilter.table}
-                          onChange={(event) =>
-                            setEditFilter({ ...editFilter, table: event.target.value })
+                      <FilterFields
+                        wide
+                        value={editFilter}
+                        onChange={(patch) => setEditFilter({ ...editFilter, ...patch })}
+                        onAdd={() => {
+                          if (
+                            !editFilter.table.trim() ||
+                            !editFilter.column.trim() ||
+                            editFilter.values.length === 0
+                          ) {
+                            return;
                           }
-                        />
-                        <Input
-                          label="Column"
-                          value={editFilter.column}
-                          onChange={(event) =>
-                            setEditFilter({ ...editFilter, column: event.target.value })
-                          }
-                        />
-                        <Select
-                          label="Must be"
-                          options={OPERATORS}
-                          value={editFilter.op}
-                          onChange={(event) =>
-                            setEditFilter({ ...editFilter, op: event.target.value })
-                          }
-                        />
-                        <Input
-                          label="Values"
-                          value={editFilter.values.join(", ")}
-                          placeholder="completed"
-                          onChange={(event) =>
-                            setEditFilter({ ...editFilter, values: words(event.target.value) })
-                          }
-                        />
-                        <Button
-                          onClick={() => {
-                            if (
-                              !editFilter.table.trim() ||
-                              !editFilter.column.trim() ||
-                              editFilter.values.length === 0
-                            ) {
-                              return;
-                            }
-                            setEdit({ ...edit, filters: [...edit.filters, editFilter] });
-                            setEditFilter(EMPTY_FILTER);
-                          }}
-                          disabled={busy}
-                        >
-                          Add filter
-                        </Button>
-                      </div>
+                          setEdit({ ...edit, filters: [...edit.filters, editFilter] });
+                          setEditFilter(EMPTY_FILTER);
+                        }}
+                        busy={busy}
+                        addLabel="Add filter"
+                      />
 
-                      <p className={edit.filters.length > 0 ? styles.binds : styles.prose}>
+                      <Consequence binds={edit.filters.length > 0}>
                         {editSummary(definition, edit)}
-                      </p>
+                      </Consequence>
 
                       {/* Beside the button that earned it. The 400 names the
                           column the catalog does not have, and it is written to
                           be repaired from — which needs it to be read. */}
-                      {errorAt === definition.id && error ? (
-                        <p className={styles.error}>{error}</p>
-                      ) : null}
+                      {errorAt === definition.id && error ? <Failure>{error}</Failure> : null}
 
-                      <Row>
-                        <Button onClick={() => void save(definition)} disabled={busy}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="primary" onClick={() => void save(definition)} disabled={busy}>
                           {busy ? "Working…" : "Save changes"}
                         </Button>
                         <Button variant="ghost" onClick={stopEditing} disabled={busy}>
                           Cancel
                         </Button>
-                      </Row>
-                    </>
+                      </div>
+                    </div>
                   ) : (
                     <>
-                      <p className={styles.description}>{definition.description}</p>
-                      {definition.expression ? (
-                        <p className={styles.expression}>
-                          <code>{definition.expression}</code>
-                        </p>
-                      ) : null}
+                      <p className="text-[14.5px] leading-relaxed text-prose">
+                        {definition.description}
+                      </p>
+                      {definition.expression ? <Formula>{definition.expression}</Formula> : null}
                       {/* Above the filters on purpose. The filters say what the
                           platform enforces; this says what the answer has to
                           admit, and it is the half a reader of the answer sees. */}
                       {definition.caveat ? (
-                        <p className={styles.caveat}>
-                          <strong>Answers must say:</strong> {definition.caveat}
-                        </p>
+                        <Caveat label="Answers must say:">{definition.caveat}</Caveat>
                       ) : null}
                       {definition.required_filters.length > 0 ? (
                         <>
-                          <ul className={styles.filters}>
-                            {definition.required_filters.map((filter, index) => (
-                              <li key={`${filter.table}.${filter.column}.${index}`}>
-                                {describeFilter(filter)}
-                              </li>
-                            ))}
-                          </ul>
+                          <FilterList filters={definition.required_filters} />
                           {/* Names the column, because "excluding nothing" on
                               its own leaves an Admin to guess which of several
                               filters is hollow — and the answer is a property
                               of the data today, not of the definition. */}
                           {(definition.excluding_nothing ?? []).length > 0 ? (
-                            <p className={styles.caveat}>
-                              <strong>Currently excluding nothing:</strong>{" "}
+                            <Caveat label="Currently excluding nothing:">
                               {definition.excluding_nothing?.join(", ")} holds a single value that
                               this filter accepts, so it is checked and cannot exclude a row. That
                               may be deliberate — a guard for data that later has gaps — or a
                               filter that has quietly stopped doing anything.
-                            </p>
+                            </Caveat>
                           ) : null}
                         </>
                       ) : (
-                        <p className={styles.prose}>
+                        <Consequence binds={false}>
                           Nothing checks this one. It reaches the model as guidance, and an answer
                           resting on it says its definition was not verified.
-                        </p>
+                        </Consequence>
                       )}
 
-                      <Row>
-                        <Button onClick={() => startEditing(definition)} disabled={busy}>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Button size="sm" onClick={() => startEditing(definition)} disabled={busy}>
+                          <Pencil />
                           Edit
                         </Button>
                         <Button
                           variant="ghost"
+                          size="sm"
                           onClick={() => void showHistory(definition)}
                           disabled={busy}
                         >
+                          <HistoryIcon />
                           {versions ? "Hide history" : "History"}
                         </Button>
                         {/* Asked twice, because it changes what the platform
                             enforces on every query that follows. */}
                         {retiring === definition.id ? (
-                          <>
+                          <div className="flex animate-fade-up flex-wrap items-center gap-2 rounded-md bg-bad-soft/70 py-1 pr-1 pl-3 sm:ml-auto">
+                            <span className="text-[12.5px] text-bad-ink">
+                              It stops applying to every query that follows.
+                            </span>
                             <Button
                               variant="danger"
+                              size="sm"
                               onClick={() => void retire(definition)}
                               disabled={busy}
                             >
@@ -1251,38 +1251,37 @@ export function Definitions({
                             </Button>
                             <Button
                               variant="ghost"
+                              size="sm"
                               onClick={() => setRetiring(null)}
                               disabled={busy}
                             >
                               Keep it
                             </Button>
-                          </>
+                          </div>
                         ) : (
-                          <Button onClick={() => setRetiring(definition.id)} disabled={busy}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-bad-soft hover:text-bad-ink sm:ml-auto"
+                            onClick={() => setRetiring(definition.id)}
+                            disabled={busy}
+                          >
+                            <Archive />
                             Retire
                           </Button>
                         )}
-                      </Row>
+                      </div>
                     </>
                   )}
 
-                  {errorAt === definition.id && error && !open ? (
-                    <p className={styles.error}>{error}</p>
-                  ) : null}
+                  {errorAt === definition.id && error && !open ? <Failure>{error}</Failure> : null}
 
                   {versions ? (
-                    <ul className={styles.filters}>
-                      {versions.length === 0 ? (
-                        <li>
-                          Nothing recorded. This definition was written before the platform kept a
-                          history, so what it said before its next edit is not knowable.
-                        </li>
-                      ) : (
-                        versions.map((version) => (
-                          <li key={version.version}>{describeVersion(version)}</li>
-                        ))
-                      )}
-                    </ul>
+                    <VersionHistory
+                      versions={versions}
+                      current={definition.version}
+                      empty="Nothing recorded. This definition was written before the platform kept a history, so what it said before its next edit is not knowable."
+                    />
                   ) : null}
                 </li>
               );
@@ -1290,6 +1289,269 @@ export function Definitions({
           </ul>
         )}
       </Card>
-    </Stack>
+
+      {/* Hidden when there is nothing out of force, so an ordinary organization
+          never sees it — but present the moment there is something to bring
+          back, which is the half of B-094 that made a mis-click permanent. */}
+      {retired.length > 0 ? (
+        <Card
+          title="Out of force"
+          subtitle="Retired, and kept. None of this constrains anything or reaches the model; an answer checked against one is still explainable."
+          action={<Badge>{counted(retired.length)}</Badge>}
+        >
+          <ul className="grid">
+            {retired.map((definition) => (
+              <li
+                key={definition.id}
+                className="grid gap-3 border-b border-border-soft py-5 first:pt-0 last:border-b-0 last:pb-0"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className={cn(itemTitle, "text-text-2")}>{definition.name}</h3>
+                    {definition.synonyms.length > 0 ? (
+                      <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                        Also called: {definition.synonyms.join(", ")}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge tone="neutral">v{definition.version}</Badge>
+                    <Badge tone="peach">retired</Badge>
+                  </div>
+                </div>
+                <p className="text-[14.5px] leading-relaxed text-text-2">{definition.description}</p>
+                {definition.required_filters.length > 0 ? (
+                  <FilterList filters={definition.required_filters} />
+                ) : null}
+                <Consequence binds={definition.required_filters.length > 0}>
+                  {definition.required_filters.length > 0
+                    ? "Reinstated, it binds again: a query that ignores its filters is blocked."
+                    : "Reinstated, it reaches the model as guidance. Nothing checks it."}
+                </Consequence>
+
+                {errorAt === definition.id && error ? <Failure>{error}</Failure> : null}
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Button size="sm" onClick={() => void reinstate(definition)} disabled={busy}>
+                    <ArchiveRestore />
+                    {busy ? "Working…" : "Reinstate"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void showHistory(definition)}
+                    disabled={busy}
+                  >
+                    <HistoryIcon />
+                    {history[definition.id] ? "Hide history" : "History"}
+                  </Button>
+                </div>
+
+                {history[definition.id] ? (
+                  <VersionHistory
+                    versions={history[definition.id]!}
+                    current={definition.version}
+                    empty="Nothing recorded."
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      <section className="mt-3 grid gap-4">
+        <div>
+          <h2 className="font-serif text-[20px] leading-snug font-semibold text-text">
+            Add definitions
+          </h2>
+          <p className="mt-0.5 text-[13.5px] text-muted-foreground">
+            Bring in the ones your warehouse already carries, or write one yourself.
+          </p>
+        </div>
+
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          <Card
+            title="Import from a metric table"
+            subtitle="Most warehouses already carry their definitions. Nothing imported takes effect until you accept it."
+          >
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* "Metric table", not "Table": the filter editor below has a
+                    Table field of its own, and two controls with one name is
+                    how somebody types a column into the wrong box. */}
+                <Input
+                  label="Metric table"
+                  value={table}
+                  placeholder="meta_metric"
+                  onChange={(event) => setTable(event.target.value)}
+                />
+                <Input
+                  label="Name column"
+                  value={nameColumn}
+                  placeholder="metric_key"
+                  onChange={(event) => setNameColumn(event.target.value)}
+                />
+                <Input
+                  label="Definition column"
+                  value={descriptionColumn}
+                  placeholder="definition_text"
+                  onChange={(event) => setDescriptionColumn(event.target.value)}
+                />
+                <Input
+                  label="Formula column (optional)"
+                  value={expressionColumn}
+                  placeholder="calculation"
+                  onChange={(event) => setExpressionColumn(event.target.value)}
+                />
+                {/* Worth more than it looks. A definition is found by name and
+                    synonym, so a metric imported without the words people use
+                    is one no question reaches — it binds nothing however
+                    carefully its filters are written (B-085). Most metric
+                    tables already have this column. */}
+                <Input
+                  label="Names column (optional)"
+                  value={synonymsColumn}
+                  placeholder="metric_name — what people call it"
+                  onChange={(event) => setSynonymsColumn(event.target.value)}
+                />
+                {/* The customer's own limits on what each metric may be used to
+                    claim. Where they exist they are usually the most carefully
+                    written column in the table, and until now there was nowhere
+                    to put them. */}
+                <Input
+                  label="Caveat column (optional)"
+                  value={caveatColumn}
+                  placeholder="what an answer must disclose"
+                  onChange={(event) => setCaveatColumn(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 border-t border-border-soft pt-4">
+                <Button
+                  variant="primary"
+                  onClick={() => void importFromTable()}
+                  disabled={busy || !table.trim() || !nameColumn.trim() || !descriptionColumn.trim()}
+                >
+                  <Download />
+                  {busy ? "Working…" : "Import"}
+                </Button>
+                <span className="text-[12.5px] text-muted-foreground">
+                  Proposals wait above for your review.
+                </span>
+              </div>
+              {notice && noticeAt === null ? <Notice>{notice}</Notice> : null}
+            </div>
+          </Card>
+
+          {/* **B-169.** `createDefinition` was on the API client from the start
+              and no screen called it, so a source whose warehouse has no metric
+              table — which is most of them, and every one somebody is trying
+              the product on for the first time — could not be given a
+              definition at all without a bearer token and a script. */}
+          <Card
+            title="Write one by hand"
+            subtitle="For a database that does not already carry its definitions. Unlike an import, this takes effect as soon as you save it."
+          >
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Name"
+                  value={written.name}
+                  placeholder="net_revenue"
+                  onChange={(event) => setWritten({ ...written, name: event.target.value })}
+                />
+                {/* The same warning the import form carries, and it matters
+                    more here: an imported definition at least answers to the
+                    label its own table gave it, while a hand-written one
+                    answers to nothing but what is typed in this box (B-085). */}
+                <Input
+                  label="Also called"
+                  value={written.synonyms}
+                  placeholder="the words people use when they ask"
+                  onChange={(event) => setWritten({ ...written, synonyms: event.target.value })}
+                />
+              </div>
+              <TextField
+                label="What it means"
+                value={written.description}
+                placeholder="Sales after discounts, excluding cancelled orders."
+                onChange={(description) => setWritten({ ...written, description })}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Formula (optional)"
+                  value={written.expression}
+                  placeholder="sum(orders.total_amount)"
+                  onChange={(event) => setWritten({ ...written, expression: event.target.value })}
+                />
+                <Input
+                  label="Answers must say (optional)"
+                  value={written.caveat}
+                  placeholder="what an answer using this metric has to disclose"
+                  onChange={(event) => setWritten({ ...written, caveat: event.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-3 rounded-md bg-surface-2/60 p-4">
+                {written.filters.length > 0 ? (
+                  <FilterList
+                    filters={written.filters}
+                    busy={busy}
+                    onRemove={(index) =>
+                      setWritten({
+                        ...written,
+                        filters: written.filters.filter((_, at) => at !== index),
+                      })
+                    }
+                  />
+                ) : (
+                  <Consequence binds={false}>
+                    With no filter this is prose: it reaches the model as guidance and the critic
+                    checks nothing. Add one to make it bind.
+                  </Consequence>
+                )}
+
+                {/* Prefixed, for the reason the import form gives above: this
+                    card puts a second filter editor on a screen that already
+                    has one, and two controls with one name is how a column
+                    ends up in the wrong box. */}
+                <FilterFields
+                  prefixed
+                  value={writtenFilter}
+                  onChange={(patch) => setWrittenFilter({ ...writtenFilter, ...patch })}
+                  onAdd={() => {
+                    if (
+                      !writtenFilter.table.trim() ||
+                      !writtenFilter.column.trim() ||
+                      writtenFilter.values.length === 0
+                    ) {
+                      return;
+                    }
+                    setWritten({ ...written, filters: [...written.filters, writtenFilter] });
+                    setWrittenFilter(EMPTY_FILTER);
+                  }}
+                  busy={busy}
+                  addLabel="Add this filter"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 border-t border-border-soft pt-4">
+                <Button
+                  variant="primary"
+                  onClick={() => void writeOne()}
+                  disabled={busy || !canWrite(written)}
+                >
+                  <PenLine />
+                  {busy ? "Working…" : "Create definition"}
+                </Button>
+              </div>
+              {/* Beside the action that earned it, like every other message here. */}
+              {notice && noticeAt === "written" ? <Notice>{notice}</Notice> : null}
+              {error && errorAt === "written" ? <Failure>{error}</Failure> : null}
+            </div>
+          </Card>
+        </div>
+      </section>
+    </div>
   );
 }
