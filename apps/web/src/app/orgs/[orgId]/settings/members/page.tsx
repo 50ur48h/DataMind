@@ -22,7 +22,7 @@ export default function MembersPage({ params }: { params: Promise<{ orgId: strin
         title="Members"
         subtitle="Who belongs here, and what they may do."
         icon={<Users />}
-        back={{ href: `/orgs/${orgId}/settings`, label: "Settings" }}
+        back={{ href: `/orgs/${orgId}/settings`, label: "Back to settings" }}
       />
       <Members orgId={orgId} role={role} />
     </Page>
