@@ -1,24 +1,20 @@
 "use client";
 
 /**
- * Light or dark, chosen by a person and remembered in this browser (D-046).
+ * How DataMind looks in this browser: a palette and light or dark (D-046).
  *
- * **Light is the default, and the operating system does not get a vote.** The
- * tokens used to switch on `prefers-color-scheme`, which meant anyone on a dark
- * desktop had never seen the design `docs/design.md` actually describes. Dark is
- * still fully supported; it is now something you choose.
+ * **Sage on light is the default, and the operating system does not get a
+ * vote.** Both choices are a person's, stored per browser and applied before
+ * first paint by the script in `layout.tsx`, so nobody sees a flash of the
+ * wrong colours on the way in.
  *
  * Three pieces have to agree, and they are deliberately small:
  *
- *   1. `globals.css` defines dark under `[data-theme="dark"]` and nothing else.
- *   2. A script in `layout.tsx` sets that attribute **before first paint**, so a
- *      person who chose dark never sees a white flash on the way in.
- *   3. This module is the only thing that writes the attribute afterwards, and
- *      the only thing that writes storage.
- *
- * The stored value is read through `useSyncExternalStore` rather than an effect,
- * so the server snapshot and the first client render agree — see `persisted.ts`
- * for why that is the primitive rather than `useState`.
+ *   1. `globals.css` defines each palette under `[data-palette]` and dark under
+ *      `[data-theme="dark"]`.
+ *   2. The pre-paint script in `layout.tsx` sets those attributes.
+ *   3. This module is the only thing that writes them afterwards, and the only
+ *      thing that writes storage.
  */
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
@@ -29,19 +25,42 @@ export type Theme = "light" | "dark";
 
 /** Shared with the pre-paint script in `layout.tsx`, which cannot import this. */
 export const THEME_STORAGE_KEY = "dataagent.theme";
+export const PALETTE_STORAGE_KEY = "dataagent.palette";
+
+export const PALETTES = [
+  { key: "sage", name: "Sage", accent: "#6e9277", bg: "#f4f6f1" },
+  { key: "lavender", name: "Lavender", accent: "#8a7fc4", bg: "#f6f5fa" },
+  { key: "mist", name: "Mist", accent: "#6286b0", bg: "#f3f6f9" },
+  { key: "seafoam", name: "Seafoam", accent: "#5a9e96", bg: "#f2f7f6" },
+  { key: "mauve", name: "Mauve", accent: "#a97887", bg: "#f9f5f6" },
+  { key: "slate", name: "Slate", accent: "#5f6b7a", bg: "#f5f5f4" },
+  { key: "clay", name: "Clay", accent: "#c4673a", bg: "#f6f3ee" },
+] as const;
+
+export type Palette = (typeof PALETTES)[number]["key"];
 
 function isTheme(value: string): value is Theme {
   return value === "light" || value === "dark";
 }
 
-const store = createPersisted<Theme>(THEME_STORAGE_KEY, "light", isTheme);
+function isPalette(value: string): value is Palette {
+  return PALETTES.some((palette) => palette.key === value);
+}
 
-function apply(theme: Theme): void {
+const themeStore = createPersisted<Theme>(THEME_STORAGE_KEY, "light", isTheme);
+const paletteStore = createPersisted<Palette>(PALETTE_STORAGE_KEY, "sage", isPalette);
+
+function applyTheme(theme: Theme): void {
   const root = document.documentElement;
-  // Light is the absence of the attribute, so there is one representation of it
-  // rather than two that could drift.
+  // Light is the absence of the attribute, so there is one representation of it.
   if (theme === "dark") root.setAttribute("data-theme", "dark");
   else root.removeAttribute("data-theme");
+}
+
+function applyPalette(palette: Palette): void {
+  const root = document.documentElement;
+  if (palette === "sage") root.removeAttribute("data-palette");
+  else root.setAttribute("data-palette", palette);
 }
 
 export interface ThemeChoice {
@@ -51,28 +70,59 @@ export interface ThemeChoice {
 }
 
 export function useTheme(): ThemeChoice {
-  const theme = useSyncExternalStore(store.subscribe, store.get, store.getServer);
+  const theme = useSyncExternalStore(themeStore.subscribe, themeStore.get, themeStore.getServer);
 
   const setTheme = useCallback((next: Theme) => {
-    store.set(next);
+    themeStore.set(next);
   }, []);
 
-  /**
-   * Push the choice at the DOM, which is the one thing React does not own here.
-   *
-   * This is what an effect is actually for — updating an external system with
-   * the latest state — and it is not the `setState`-in-an-effect the lint rule
-   * rejects. Keying it on `theme` rather than doing it inside `setTheme` also
-   * covers the case a direct call would miss: **another tab** changing the
-   * choice arrives through the `storage` event, with no local call to hang the
-   * DOM write off. Idempotent, so several components using this hook is fine.
-   */
+  // Keyed on the value rather than done inside `setTheme`, so a change made in
+  // another tab (which arrives through the `storage` event) is applied too.
   useEffect(() => {
-    apply(theme);
+    applyTheme(theme);
   }, [theme]);
 
   return useMemo(
     () => ({ theme, setTheme, toggle: () => setTheme(theme === "dark" ? "light" : "dark") }),
     [theme, setTheme],
   );
+}
+
+export interface PaletteChoice {
+  palette: Palette;
+  setPalette: (next: Palette) => void;
+}
+
+export function usePalette(): PaletteChoice {
+  const palette = useSyncExternalStore(
+    paletteStore.subscribe,
+    paletteStore.get,
+    paletteStore.getServer,
+  );
+
+  const setPalette = useCallback((next: Palette) => {
+    paletteStore.set(next);
+  }, []);
+
+  useEffect(() => {
+    applyPalette(palette);
+  }, [palette]);
+
+  return useMemo(() => ({ palette, setPalette }), [palette, setPalette]);
+}
+
+/**
+ * Subscribe to palette and mode changes made anywhere on the page.
+ *
+ * Charts are drawn on a canvas and cannot read CSS variables live, so they
+ * redraw when either attribute on `<html>` changes.
+ */
+export function useAppearanceVersion(): string {
+  const theme = useSyncExternalStore(themeStore.subscribe, themeStore.get, themeStore.getServer);
+  const palette = useSyncExternalStore(
+    paletteStore.subscribe,
+    paletteStore.get,
+    paletteStore.getServer,
+  );
+  return `${palette}:${theme}`;
 }

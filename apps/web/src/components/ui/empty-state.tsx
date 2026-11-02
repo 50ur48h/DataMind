@@ -1,20 +1,12 @@
 /**
  * A place nobody has filled yet — not a page that failed (docs/design.md).
  *
- * One muted sentence was what these used to be, and it reads as a failure. A
- * mark, a title saying what belongs here, a line of why, and **exactly one
- * action**.
- *
- * **The action slot is also where a Reader is told who can act instead.** Giving
- * them a button the API would refuse teaches people the product is broken rather
- * than that they lack permission (B-008), so the caller passes either the
- * control or the sentence — never a disabled control, which looks operable and
- * is not.
+ * A mark, a title saying what belongs here, a line of why, and **exactly one
+ * action**. The action slot is also where a Reader is told who can act instead:
+ * never a disabled control, which looks operable and is not (B-008).
  */
 
 import type { ReactNode } from "react";
-
-import styles from "./empty-state.module.css";
 
 export function EmptyState({
   icon,
@@ -31,17 +23,20 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className={styles.empty}>
+    <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-border bg-surface/60 px-6 py-10 text-center">
       {icon && (
-        <span className={styles.mark} aria-hidden="true">
+        <span
+          aria-hidden="true"
+          className="grid size-11 place-items-center rounded-full bg-brand-soft text-brand-ink [&_svg]:size-5"
+        >
           {icon}
         </span>
       )}
-      <div className={styles.words}>
-        <p className={styles.title}>{title}</p>
-        <p className={styles.body}>{children}</p>
+      <div className="grid max-w-md gap-1">
+        <p className="font-serif text-[17px] font-semibold text-text">{title}</p>
+        <p className="text-[14px] leading-relaxed text-muted-foreground">{children}</p>
       </div>
-      {action}
+      {action && <div className="text-[13.5px] text-muted-foreground">{action}</div>}
     </div>
   );
 }

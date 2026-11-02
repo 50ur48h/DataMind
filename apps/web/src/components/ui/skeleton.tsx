@@ -1,31 +1,22 @@
 /**
  * What a list looks like before its rows arrive (docs/design.md, *Waiting*).
  *
- * **It claims the shape and nothing else.** A skeleton says how much is coming
- * and stops the page jumping when it lands; it makes no statement about progress,
- * so unlike a spinner or a bar it cannot turn out to have been wrong.
- *
- * Two rules it exists to enforce:
- *
- *   1. **Prefer too few rows.** Three skeletons where one item arrives is a
- *      small lie about the shape of the answer, and the page still jumps —
- *      upwards, which is worse, because the reader has already started reading.
- *   2. **A skeleton is not an empty state.** `null` means *not asked yet* and
- *      `[]` means *there is nothing*; rendering "Nothing yet" during a request
- *      tells somebody something false about their own data.
- *
- * `aria-hidden`, with a single `role="status"` label above it: a screen reader
- * should hear "Loading members" once, not eight anonymous boxes.
+ * It claims the shape and nothing else. Prefer too few rows, and never use it
+ * as an empty state: `null` means *not asked yet* and `[]` means *nothing*.
+ * The rows are `aria-hidden`, with a single `role="status"` label above them.
  */
 
-import styles from "./skeleton.module.css";
+import { cn } from "@/lib/utils";
+
+const bar =
+  "block h-3 rounded-full bg-[linear-gradient(90deg,var(--surface-2)_25%,var(--border-soft)_50%,var(--surface-2)_75%)] bg-[length:200%_100%] animate-shimmer";
 
 export function SkeletonList({
   rows = 3,
   avatar = false,
   label,
 }: {
-  /** Roughly what usually arrives. Round down — see rule 1. */
+  /** Roughly what usually arrives. Round down. */
   rows?: number;
   /** A leading circle, for lists whose rows carry an avatar or a status dot. */
   avatar?: boolean;
@@ -33,16 +24,15 @@ export function SkeletonList({
   label: string;
 }) {
   return (
-    <div className={styles.list}>
-      <span role="status" className={styles.srOnly}>
+    <div className="grid gap-1">
+      <span role="status" className="sr-only">
         {label}
       </span>
       {Array.from({ length: rows }, (_, index) => (
-        <div className={styles.row} key={index} aria-hidden="true">
-          {avatar && <span className={styles.avatar} />}
-          {/* Uneven widths, because real rows are uneven. A column of
-              identical bars reads as a table that failed to load. */}
-          <span className={index % 3 === 0 ? styles.lineLong : styles.lineShort} />
+        <div className="flex items-center gap-3 px-3 py-2" key={index} aria-hidden="true">
+          {avatar && <span className={cn(bar, "size-7 shrink-0 rounded-full")} />}
+          {/* Uneven widths, because real rows are uneven. */}
+          <span className={cn(bar, index % 3 === 0 ? "w-4/5" : "w-3/5")} />
         </div>
       ))}
     </div>

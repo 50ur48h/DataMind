@@ -1,21 +1,11 @@
 /**
  * Something is happening and there is nothing to count (docs/design.md).
  *
- * For a one-shot request that returns once — a catalog refresh, a column
- * profile, a connection test. A word saying what is happening, optionally an
- * indeterminate bar, and then the caller replaces the whole thing with **the
- * real result sentence**.
- *
- * **It must never be given steps.** An operation that reports no steps can only
- * be given invented ones, and inventing them in the client is exactly what D-048
- * refuses. If the work does report its steps, it wants the working state
- * instead.
- *
- * The word is a live region so the change is announced; the bar is decorative
- * and hidden, because it conveys nothing the word does not.
+ * A word saying what is happening, optionally an indeterminate bar, and then
+ * the caller replaces the whole thing with the real result sentence. It must
+ * never be given steps: inventing them in the client is what D-048 refuses.
+ * The word is a live region; the bar is decorative and hidden.
  */
-
-import styles from "./pending.module.css";
 
 export function Pending({
   children,
@@ -29,14 +19,21 @@ export function Pending({
   spinner?: boolean;
 }) {
   return (
-    <div className={styles.pending}>
-      <p className={styles.row}>
-        {spinner && <span className={styles.spinner} aria-hidden="true" />}
-        <span aria-live="polite" className={styles.word}>
-          {children}
-        </span>
+    <div className="grid gap-2">
+      <p className="flex items-center gap-2.5 text-[14px] text-muted-foreground">
+        {spinner && (
+          <span
+            aria-hidden="true"
+            className="inline-block size-3.5 shrink-0 animate-spin rounded-full border-2 border-brand-soft border-t-brand"
+          />
+        )}
+        <span aria-live="polite">{children}</span>
       </p>
-      {bar && <span className={styles.bar} aria-hidden="true" />}
+      {bar && (
+        <span aria-hidden="true" className="relative block h-1 overflow-hidden rounded-full bg-surface-2">
+          <span className="absolute inset-y-0 w-1/3 animate-indeterminate rounded-full bg-brand" />
+        </span>
+      )}
     </div>
   );
 }
