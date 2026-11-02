@@ -18,6 +18,11 @@ vi.mock("@/lib/auth/session", () => ({
   useSession: () => session,
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/orgs/o1/conversations/c1",
+}));
+
 const CONVERSATION = {
   id: "c1",
   title: "How many orders were placed in July 2026?",
@@ -479,11 +484,11 @@ describe("how the answer was reached", () => {
   });
 });
 
-// jsdom has no canvas, so the real vega would try to draw, fail asynchronously
-// and resolve after the assertions — which made this file flake once in a full
-// run. What these tests claim is that the card offers the spec and renders the
-// refusal, not that vega draws; the drawing is what the browser smoke is for.
-vi.mock("vega-embed", () => ({ default: vi.fn(async () => ({})) }));
+// jsdom draws nothing, so ECharts itself is stood in for. What these tests
+// claim is that the card offers the chart, its spec and its refusal — not that
+// a picture is drawn; the drawing is what the browser smoke is for.
+const echartsInit = vi.fn(() => ({ setOption: vi.fn(), resize: vi.fn(), dispose: vi.fn() }));
+vi.mock("@/lib/echarts", () => ({ echarts: { init: echartsInit } }));
 
 describe("the chart, and the reason there is none", () => {
   const SPEC = {
@@ -496,33 +501,22 @@ describe("the chart, and the reason there is none", () => {
     data: { values: [{ month: "2026-07-01", revenue: 6214 }] },
   };
 
-  it("gives vega a categorical range, so a split is not eight of one colour", async () => {
+  it("draws the chart inside the answer, from the spec the server sent", async () => {
     /**
-     * **B-109.** Every chart was `--primary` and nothing else, and the model
-     * apologised in the answer for a colour setting it had no field to ask for.
-     * The range is read from the tokens like the rest of the theme, because a
-     * palette written into a spec is the same bug design.md names for a colour
-     * written into a component.
-     *
-     * Asserted through the embed call rather than on the CSS, since what matters
-     * is that vega is *given* the range — jsdom resolves no custom properties,
-     * so the fallback is what renders here and the shape is the property.
+     * **B-048 and B-109.** The chart is part of the claim, so it sits inside
+     * the answer card, and the colours come from the page's tokens rather than
+     * being written into the spec (the eight distinct series hues are held by
+     * `components/answer/chart-option.test.ts`).
      */
-    const embed = (await import("vega-embed")).default as unknown as ReturnType<typeof vi.fn>;
-    embed.mockClear();
+    echartsInit.mockClear();
     routeFetch({ run: { ...ANSWERED, limitations: [], chart: { spec: SPEC } } });
 
     render(<ConversationThread orgId="o1" conversationId="c1" />);
-    await screen.findByTestId("chart");
+    const chart = await screen.findByTestId("chart");
 
-    const config = embed.mock.calls[0]?.[2] as { config?: { range?: { category?: string[] } } };
-    const category = config?.config?.range?.category ?? [];
-    expect(category).toHaveLength(8);
-    // Eight distinct hues, in a fixed order. A palette that had quietly become
-    // eight copies of the primary would pass a length check and nothing else.
-    expect(new Set(category).size).toBe(8);
+    expect(chart.closest("[data-testid='answer']")).not.toBeNull();
+    await waitFor(() => expect(echartsInit).toHaveBeenCalled());
   });
-
   it("says why there is no chart, where the chart would have been", async () => {
     // **The case the whole design turned on.** A picture that silently fails to
     // appear is indistinguishable from a broken page, so the reason renders in
@@ -822,7 +816,7 @@ describe("an answer keeps its evidence when the next question is asked (B-106)",
 
     expect(await screen.findByText("6,214 orders were placed in July 2026.")).toBeInTheDocument();
     expect(screen.getByText("5,004 orders were placed in August 2026.")).toBeInTheDocument();
-    expect(screen.getByText("How many orders were placed in July 2026?")).toBeInTheDocument();
+    expect(screen.getAllByText("How many orders were placed in July 2026?").length).toBeGreaterThan(0);
   });
 
   it("falls back to the words when a run could not be fetched", async () => {

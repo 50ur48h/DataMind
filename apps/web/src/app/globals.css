@@ -310,6 +310,7 @@
     overflow-wrap: anywhere;
   }
   .prose-answer > * + * { margin-top: 0.75em; }
+  .prose-answer > :first-child { margin-top: 0; }
   .prose-answer strong { font-weight: 600; color: var(--text); }
   .prose-answer em { font-style: italic; }
   .prose-answer h1, .prose-answer h2, .prose-answer h3, .prose-answer h4 {
@@ -319,6 +320,8 @@
   .prose-answer h2 { font-size: 1.18em; }
   .prose-answer h3, .prose-answer h4 { font-size: 1.05em; }
   .prose-answer ul, .prose-answer ol { padding-left: 1.3em; }
+  .prose-answer ul { list-style: disc; }
+  .prose-answer ol { list-style: decimal; }
   .prose-answer li + li { margin-top: 0.3em; }
   .prose-answer li::marker { color: var(--muted); }
   .prose-answer a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -358,6 +361,10 @@
   .sql-code .str { color: var(--code-str); }
   .sql-code .num { color: var(--code-str); }
 }
+
+/* SQL keyword tinting via the CSS Custom Highlight API (see sql-block.tsx). */
+::highlight(sql-kw) { color: var(--code-kw); }
+::highlight(sql-str) { color: var(--code-str); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
