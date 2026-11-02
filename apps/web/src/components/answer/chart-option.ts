@@ -314,8 +314,12 @@ function diverging(items: Item[], theme: ChartTheme, valueTitle: string, format:
       valueFormatter: (v: number) => format.full(v),
     }),
     xAxis: valueAxis(theme, format, {
-      min: (extent: { min: number }) => Math.min(0, extent.min) * 1.12,
-      max: (extent: { max: number }) => Math.max(0, extent.max) * 1.12,
+      // Room beyond each end in proportion to the whole range, so a short bar's
+      // label never runs into the names (the design pads both ends the same way).
+      min: (extent: { min: number; max: number }) =>
+        Math.min(0, extent.min) - Math.max(Math.abs(extent.min), Math.abs(extent.max), 1) * 0.24,
+      max: (extent: { min: number; max: number }) =>
+        Math.max(0, extent.max) + Math.max(Math.abs(extent.min), Math.abs(extent.max), 1) * 0.16,
       axisLabel: {
         color: theme.muted,
         fontSize: 11,

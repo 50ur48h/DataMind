@@ -31,7 +31,23 @@ function registry(): { highlights: HighlightRegistry; make: () => HighlightLike 
   const css = (window as unknown as { CSS?: { highlights?: HighlightRegistry } }).CSS;
   const Ctor = (window as unknown as { Highlight?: new () => HighlightLike }).Highlight;
   if (!css?.highlights || !Ctor) return null;
+  ensureHighlightStyles();
   return { highlights: css.highlights, make: () => new Ctor() };
+}
+
+/**
+ * The two `::highlight()` rules, added at run time.
+ *
+ * Not in `globals.css`: the build's CSS parser does not know `::highlight()`
+ * yet, warns, and drops the rules from the production bundle.
+ */
+function ensureHighlightStyles(): void {
+  if (document.getElementById("sql-highlight-styles")) return;
+  const style = document.createElement("style");
+  style.id = "sql-highlight-styles";
+  style.textContent =
+    "::highlight(sql-kw){color:var(--code-kw)}::highlight(sql-str){color:var(--code-str)}";
+  document.head.appendChild(style);
 }
 
 function ranges(node: Text, pattern: RegExp): Range[] {

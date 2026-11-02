@@ -41,7 +41,7 @@ function Citation({
 }) {
   const [open, setOpen] = useState(startOpen);
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
       <button
         type="button"
         aria-expanded={open}
@@ -81,9 +81,9 @@ function Findings({
   const shown = anyCited ? findings.filter((finding) => finding.cited) : findings;
   if (shown.length === 0) return null;
   return (
-    <ul className="grid gap-2.5">
+    <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5">
       {shown.map((finding) => (
-        <li key={finding.id} className="grid gap-2 rounded-md bg-surface-2 px-3 py-2.5">
+        <li key={finding.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-md bg-surface-2 px-3 py-2.5">
           <span
             className={cn(
               "w-fit rounded-full px-2 py-0.5 text-[11px] font-semibold",
@@ -239,7 +239,7 @@ export function HowIWorked({
         )}
       >
         <div className={cn("min-h-0 overflow-hidden", !open && "invisible")}>
-          <div className="grid gap-3.5 px-4 pt-1 pb-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3.5 px-4 pt-1 pb-4">
             {run.method && <Row label="Method">{run.method}</Row>}
             {grounding && <Row label="Definitions">{grounding}</Row>}
             {hasFindings && (
