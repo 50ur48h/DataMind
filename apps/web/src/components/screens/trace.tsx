@@ -32,12 +32,12 @@
  * know about is worse than one that shows an ugly word.
  */
 
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { createApi, type RunEvent } from "@/lib/api-client";
 import { useSession } from "@/lib/auth/session";
-
-import styles from "./trace.module.css";
+import { cn } from "@/lib/utils";
 
 /**
  * What each step did, and where it matters, why — in words a person who has
@@ -419,13 +419,10 @@ export function sentence(event: RunEvent): Step {
  * word is always there, so colour is a second cue and never the only one.
  */
 const TONE_CLASS: Record<string, string | undefined> = {
-  sql_rejected: styles.wordWarn,
-  budget_warning: styles.wordWarn,
-  budget_exhausted: styles.wordWarn,
-  finding_added: styles.wordOk,
-  query_executed: styles.wordOk,
-  run_finished: styles.wordOk,
-  error: styles.wordError,
+  sql_rejected: "text-warn-ink",
+  budget_warning: "text-warn-ink",
+  budget_exhausted: "text-warn-ink",
+  error: "text-bad-ink",
 };
 
 /**
@@ -503,8 +500,20 @@ function tookFor(
   return `Thought for ${minutes} minute${minutes === 1 ? "" : "s"}`;
 }
 
+/** "8 steps", "4 queries", "1 document" — the meta beside the settled pill. */
+function metaOf(events: RunEvent[]): string[] {
+  const queries = events.filter((event) => event.type === "query_executed").length;
+  const documents = events.filter((event) => event.type === "knowledge_consulted").length;
+  return [
+    plural(events.length, "step", "steps"),
+    queries > 0 ? plural(queries, "query", "queries") : null,
+    documents > 0 ? plural(documents, "document", "documents") : null,
+  ].filter((part): part is string => part !== null);
+}
+
 /**
- * The working state (docs/design.md, *The working state*).
+ * The working state (docs/design.md, *The working state*), drawn as the Calm
+ * design's thinking pill and timeline.
  *
  * **Every row here is one durable event, in the order it was written.** There is
  * no scripted sequence, no minimum display time and no step that appears because
@@ -531,99 +540,98 @@ export function Trace({
   const events = useTrace(orgId, runId);
   // Open while the run is going and collapsed once it has finished — watching is
   // the point during, the answer is the point after — but an explicit toggle
-  // wins from then on. Derived rather than synced in an effect: the default is a
-  // function of `live`, not a thing that has to be kept in step with it.
+  // wins from then on.
   const [toggled, setToggled] = useState<boolean | null>(null);
   const open = toggled ?? (live || defaultOpen);
 
-  if (!runId || events.length === 0) return null;
+  if (!runId || (events.length === 0 && !live)) return null;
+
+  const label = live ? "Thinking" : tookFor(events, startedAt, finishedAt);
+  const latest = events.at(-1);
+  const now = live && latest ? sentence(latest).lead : null;
+  const meta = live ? [] : metaOf(events);
 
   return (
-    <div className={styles.trace}>
+    <div className="mb-4 font-sans">
+      {/* The button's name is the label alone, so "Thought for 19 seconds" is
+          what a screen reader hears and what a locator finds; the meta and
+          the current step are for the eye. `aria-live` announces the change
+          from thinking to thought without taking the text out of the name. */}
       <button
         type="button"
         aria-expanded={open}
+        aria-label={label}
         onClick={() => setToggled(!open)}
-        className={styles.toggle}
+        className="inline-flex max-w-full items-center gap-2 rounded-full bg-surface-2 py-[7px] pr-3.5 pl-2.5 text-[14px] transition-colors hover:bg-head-hover"
       >
-        <svg
-          className={live ? styles.markLive : styles.mark}
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
+        <Sparkles
           aria-hidden="true"
+          className={cn("size-[17px] shrink-0 text-brand", live && "animate-breathe")}
+        />
+        <span
+          aria-live="polite"
+          className={cn("shrink-0", live ? "text-shimmer font-semibold" : "font-medium text-text-2")}
         >
-          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-        </svg>
-        {/*
-         * **The label is a plain child of the button, and that is deliberate.**
-         *
-         * It was first wrapped in a `role="status"` region with
-         * `display: contents`, and the result was a button with **no accessible
-         * name at all** — the text was trapped inside the live region and never
-         * reached the name computation, so a screen reader announced "button"
-         * and nothing else. Caught by an e2e locator that could not find it by
-         * name, which is the only reason it was found before shipping.
-         *
-         * `aria-live` here does the announcing without taking the text out of
-         * the name: the role is unchanged, so name-from-content still sees it.
-         */}
-        <span aria-live="polite" className={live ? styles.working : styles.settled}>
-          {live ? "Thinking" : tookFor(events, startedAt, finishedAt)}
+          {live ? "Thinking…" : label}
         </span>
-        <svg
-          className={open ? styles.chevOpen : styles.chev}
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        {now && (
+          <span aria-hidden="true" className="min-w-0 max-w-[380px] truncate text-[13.5px] text-muted-foreground">
+            · {now}
+          </span>
+        )}
+        {meta.length > 0 && (
+          <span aria-hidden="true" className="hidden items-center gap-1.5 sm:flex">
+            {meta.map((part) => (
+              <span key={part} className="rounded-full bg-surface px-2 py-0.5 text-[12px] whitespace-nowrap text-muted-foreground">
+                {part}
+              </span>
+            ))}
+          </span>
+        )}
+        <ChevronDown
           aria-hidden="true"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+          className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-300", open && "rotate-180")}
+        />
       </button>
 
-      {/* A grid whose single row goes 0fr → 1fr, which animates a height the
-          component does not have to measure. */}
-      <div className={open ? styles.expanderOpen : styles.expander}>
-        <div className={styles.expanderClip}>
-          <ol className={styles.steps}>
+      {/* A grid whose single row goes 0fr → 1fr animates a height nobody has
+          to measure; the steps stay mounted, so reopening is instant. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-400 ease-[cubic-bezier(.2,.8,.2,1)]",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className={cn("min-h-0 overflow-hidden", !open && "invisible")}>
+          <ol className="mt-4 mb-1 ml-2.5">
             {events.map((event, index) => {
               const step = sentence(event);
-              // The last row carries the spinner only while the run is still
-              // going. Once it has settled every step finished, so every one
-              // of them gets a check.
-              const running = live && index === events.length - 1;
+              // The last row pulses only while the run is still going; once it
+              // has settled every step finished.
+              const active = live && index === events.length - 1;
+              const last = index === events.length - 1;
               return (
                 <li
                   key={event.seq}
-                  className={styles.step}
+                  className={cn("relative animate-fade-up pl-7", last ? "pb-1" : "pb-3.5")}
                   style={{ animationDelay: `${Math.min(index, 6) * 60}ms` }}
                 >
-                  {running ? (
-                    <span className={styles.spinner} aria-hidden="true" />
-                  ) : (
-                    <svg
-                      className={styles.tick}
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute top-[5px] left-0 size-[11px] rounded-full border-2 transition-colors",
+                      active ? "animate-ring border-brand bg-brand-soft" : "border-brand bg-brand",
+                    )}
+                  />
+                  {!last && (
+                    <span aria-hidden="true" className="absolute top-5 bottom-0 left-[4.75px] w-[1.5px] bg-border" />
                   )}
-                  <span className={TONE_CLASS[event.type] ?? styles.word}>{step.lead}</span>
-                  {step.rest && <span className={styles.detail}>{step.rest}</span>}
+                  <span className={cn("block text-[14px] font-medium text-text", TONE_CLASS[event.type])}>
+                    {step.lead}
+                  </span>
+                  {step.rest && (
+                    <span className="block text-[13.5px] leading-relaxed text-muted-foreground">{step.rest}</span>
+                  )}
                 </li>
               );
             })}

@@ -164,7 +164,7 @@ test("a refresh mid-run replays the whole trace", async ({ page }) => {
 test("the chart is drawn in the browser, inside the answer", async ({ page }) => {
   /**
    * **The half of WP11.1 that only a real browser can prove.** jsdom has no
-   * canvas, so every unit test here mocks `vega-embed` and asserts the card
+   * canvas, so every unit test here stands ECharts in and asserts the card
    * *offers* a chart — which says nothing about whether one appears. This runs
    * the real renderer against a real spec.
    *
@@ -178,12 +178,11 @@ test("the chart is drawn in the browser, inside the answer", async ({ page }) =>
 
   const chart = page.getByTestId("chart");
   await expect(chart).toBeVisible({ timeout: 15_000 });
-  // Vega renders these marks as SVG. Asserting on the marks rather than on the
-  // container is the difference between "the page reserved room for a chart"
-  // and "a chart was drawn" — the first version of this test looked for a
-  // canvas, passed nothing, and would have shipped an empty box.
-  await expect(chart.locator("svg.marks")).toBeVisible({ timeout: 15_000 });
-  await expect(chart.locator("svg .mark-line, svg .mark-group")).not.toHaveCount(0);
+  // ECharts draws the figure as SVG. Asserting on the drawn paths rather than
+  // on the container is the difference between "the page reserved room for a
+  // chart" and "a chart was drawn".
+  await expect(chart.locator("svg")).toBeVisible({ timeout: 15_000 });
+  await expect(chart.locator("svg path")).not.toHaveCount(0);
 
   // **And it is inside the run's own answer, not in a panel of its own** — B-048.
   // Anchored on `data-testid="answer"` rather than on an ancestor `<section>`:
@@ -229,7 +228,7 @@ test("drawing the chart reaches nothing outside the page", async ({ page }) => {
 
   await openConversation(page);
   await ask(page);
-  await expect(page.getByTestId("chart").locator("svg.marks")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("chart").locator("svg")).toBeVisible({ timeout: 15_000 });
 
   expect(offPage, `the page fetched something off ${origin}: ${offPage.join(", ")}`).toEqual([]);
 });

@@ -4,6 +4,24 @@ Format (plan §1.6): context → options → decision → consequences, 5–15 l
 Any deviation from `docs/architecture.md` needs an entry here **and** an edit to the
 architecture doc, both in the same PR as the code.
 
+## D-070 — The "Calm" design, on Tailwind, shadcn/ui, ECharts and TanStack Table
+Date: 2026-11-03 · Phase: 13 · PR: #1, #2
+Context: a new visual direction was approved — *Design 1 · Calm*: seven soft
+palettes, a serif voice for answers, and answers built from figures, tables,
+number cards and callouts. The reference was drawn with ECharts and Lucide.
+design.md said "no component library" and B-004 chose CSS Modules over Tailwind.
+Options: (a) rebuild the Calm look by hand in CSS Modules and keep Vega-Lite;
+(b) adopt the reference's own libraries.
+Decision: (b). Tailwind v4 with shadcn/ui (Radix) for accessible primitives —
+dialogs, menus, tooltips and drawers are exactly the focus-trapped behaviour the
+old rule named as the honest trigger — ECharts for charts, TanStack Table for
+tables, Motion for animation, Lucide for icons, Sonner for toasts. ECharts reads
+the server's closed-vocabulary spec through a translator rather than a spec the
+model wrote; `vega-embed` is removed. Fonts are self-hosted (fontsource).
+Consequences: design.md is rewritten; the old token names stay as aliases so
+CSS Modules not yet rewritten keep working; a chart may also be drawn from an
+answer's own table, never from numbers the answer does not hold.
+
 ## D-069 — Meta's Model API is a provider, through the OpenAI adapter
 Date: 2026-11-02 · Phase: 13 · PR: #163 (B-182)
 Context: the owner holds a Meta Model API key and asked for answers from Muse
