@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Settings } from "./settings";
@@ -75,11 +75,13 @@ describe("<Settings />", () => {
     role.value = "admin";
     window.localStorage.clear();
     document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-palette");
   });
 
   afterEach(() => {
     window.localStorage.clear();
     document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-palette");
   });
 
   it("shows who you are, your role, and what the organization answers from", async () => {
@@ -90,6 +92,19 @@ describe("<Settings />", () => {
     expect(await screen.findByText("alice@example.com")).toBeInTheDocument();
     expect(screen.getByText("admin")).toBeInTheDocument();
     expect(screen.getByText("Pizza (PostgreSQL)")).toBeInTheDocument();
+    // An Admin is offered every destination, each one link by its plain name.
+    expect(screen.getByRole("link", { name: "Members" })).toHaveAttribute(
+      "href",
+      "/orgs/o1/settings/members",
+    );
+    expect(screen.getByRole("link", { name: "Data sources" })).toHaveAttribute(
+      "href",
+      "/orgs/o1/data-sources",
+    );
+    expect(screen.getByRole("link", { name: "Knowledge" })).toHaveAttribute(
+      "href",
+      "/orgs/o1/documents",
+    );
   });
 
   it("names the unbuilt sections without pretending they work", async () => {
@@ -104,13 +119,17 @@ describe("<Settings />", () => {
     render(<Settings orgId="o1" />);
 
     for (const unbuilt of ["System instructions", "Tone", "Preferences"]) {
-      expect(await screen.findByText(unbuilt)).toBeInTheDocument();
+      const section = await screen.findByRole("region", { name: unbuilt });
+      expect(within(section).getByText("Coming soon")).toBeInTheDocument();
+      // Nothing in those sections is a control, disabled or otherwise.
+      for (const control of ["button", "combobox", "switch", "textbox", "checkbox", "link"]) {
+        expect(within(section).queryByRole(control)).not.toBeInTheDocument();
+      }
     }
     expect(screen.getAllByText("Coming soon")).toHaveLength(3);
 
-    // Nothing in those sections is a control, disabled or otherwise.
+    // And nowhere on the screen is a picker or a text box standing in for one.
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
@@ -134,6 +153,31 @@ describe("<Settings />", () => {
     expect(window.localStorage.getItem("dataagent.theme")).toBe("light");
   });
 
+  it("offers all seven palettes, and remembers the one chosen", async () => {
+    stubFetch();
+
+    render(<Settings orgId="o1" />);
+
+    const palettes = within(await screen.findByRole("group", { name: "Palette" }));
+    expect(palettes.getAllByRole("button")).toHaveLength(7);
+    // Sage is where everyone starts, and it is the absence of the attribute.
+    expect(palettes.getByRole("button", { name: "Sage" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(palettes.getByRole("button", { name: "Lavender" }));
+
+    await waitFor(() =>
+      expect(document.documentElement.getAttribute("data-palette")).toBe("lavender"),
+    );
+    expect(window.localStorage.getItem("dataagent.palette")).toBe("lavender");
+    expect(palettes.getByRole("button", { name: "Lavender" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    fireEvent.click(palettes.getByRole("button", { name: "Sage" }));
+    await waitFor(() => expect(document.documentElement.getAttribute("data-palette")).toBeNull());
+  });
+
   it("hides admin destinations from a Reader (B-008)", async () => {
     role.value = "reader";
     // Nothing chosen, so the Reader-specific wording below is reachable at all.
@@ -146,7 +190,7 @@ describe("<Settings />", () => {
 
     expect(await screen.findByRole("link", { name: "Members" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Data sources" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Documents" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Knowledge" })).not.toBeInTheDocument();
     // And the Reader is told who can choose, rather than shown a control.
     expect(screen.getByText(/An Admin can choose one/)).toBeInTheDocument();
   });
@@ -187,7 +231,9 @@ describe("<Settings />", () => {
     render(<Settings orgId="o1" />);
     expect(await screen.findByText("Shown to everyone")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Hide cost on answers" }));
+    const toggle = screen.getByRole("switch", { name: "Show cost on answers" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(toggle);
 
     await waitFor(() =>
       expect(
@@ -210,8 +256,11 @@ describe("<Settings />", () => {
     render(<Settings orgId="o1" />);
 
     expect(await screen.findByText("Hidden from everyone")).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /cost on answers/ }),
     ).not.toBeInTheDocument();
+    // Told who can, rather than shown a control that would earn a 403.
+    expect(screen.getByText("An Admin can change this.")).toBeInTheDocument();
   });
 });
