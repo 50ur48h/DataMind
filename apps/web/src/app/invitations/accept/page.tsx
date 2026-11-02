@@ -3,8 +3,8 @@
 import { Suspense } from "react";
 
 import { AcceptInvite } from "@/components/screens/accept-invite";
+import { EntryBrand, EntryFrame } from "@/components/screens/entry-frame";
 import { SignIn } from "@/components/screens/sign-in";
-import { Page, PageHeader } from "@/components/ui/page";
 import { useSession } from "@/lib/auth/session";
 
 function Body() {
@@ -15,14 +15,21 @@ function Body() {
 
 export default function AcceptInvitationPage() {
   return (
-    <Page>
-      <PageHeader
-        title="Join an organization"
-        subtitle="Invitations are single-use and expire after seven days."
-      />
+    <EntryFrame>
+      <div className="grid justify-items-center gap-6 text-center">
+        <EntryBrand size="small" />
+        <div className="grid gap-2">
+          <h1 className="font-serif text-[28px] leading-tight font-semibold tracking-[-0.01em] text-text">
+            Join an organization
+          </h1>
+          <p className="text-[14.5px] leading-relaxed text-pretty text-muted-foreground">
+            Invitations are single-use and expire after seven days.
+          </p>
+        </div>
+      </div>
       <Suspense fallback={null}>
         <Body />
       </Suspense>
-    </Page>
+    </EntryFrame>
   );
 }

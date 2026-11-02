@@ -15,8 +15,12 @@
  * even to an Admin (B-037).
  */
 
+import { Archive, CircleAlert, MessagesSquare, RotateCcw } from "lucide-react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -24,11 +28,25 @@ import { SkeletonList } from "@/components/ui/skeleton";
 import { ApiError, createApi, type Conversation } from "@/lib/api-client";
 import { useSession } from "@/lib/auth/session";
 
-import styles from "./archived-chats.module.css";
-
 function label(conversation: Conversation): string {
   const title = conversation.title?.trim();
   return title && title.length > 0 ? title : "Untitled chat";
+}
+
+const day = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
+
+/** When it was put away, which database it asked, and how much is in it — one quiet line. */
+function details(conversation: Conversation): string {
+  const parts: string[] = [];
+  const archivedAt = conversation.archived_at ? new Date(conversation.archived_at) : null;
+  if (archivedAt && !Number.isNaN(archivedAt.getTime())) {
+    parts.push(`Archived ${day.format(archivedAt)}`);
+  }
+  if (conversation.data_source_name) parts.push(conversation.data_source_name);
+  parts.push(
+    conversation.message_count === 1 ? "1 message" : `${conversation.message_count} messages`,
+  );
+  return parts.join(" · ");
 }
 
 export function ArchivedChats({ orgId }: { orgId: string }) {
@@ -63,12 +81,13 @@ export function ArchivedChats({ orgId }: { orgId: string }) {
   }, [api, orgId]);
 
   const restore = useCallback(
-    async (conversationId: string) => {
-      setBusy(conversationId);
+    async (conversation: Conversation) => {
+      setBusy(conversation.id);
       setError(null);
       try {
-        await api.archiveConversation(orgId, conversationId, false);
+        await api.archiveConversation(orgId, conversation.id, false);
         await load();
+        toast(`Restored “${label(conversation)}”`);
       } catch (cause) {
         setError(cause instanceof ApiError ? cause.message : "That chat could not be restored.");
       } finally {
@@ -82,35 +101,66 @@ export function ArchivedChats({ orgId }: { orgId: string }) {
     <Card
       title="Archived chats"
       subtitle="Put away, not deleted — every answer and its trace is still here."
+      action={
+        archived && archived.length > 0 ? (
+          <Badge className="tabular-nums">{archived.length}</Badge>
+        ) : undefined
+      }
     >
       {archived === null && !error && <SkeletonList rows={2} label="Loading archived chats" />}
       {archived?.length === 0 && (
-        <EmptyState
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 7h18v3H3zM5 10v9h14v-9M10 14h4" />
-            </svg>
-          }
-          title="Nothing archived"
-          action={null}
-        >
-          Chats you put away appear here, with their answers and traces intact —
-          and you can bring any of them back.
+        <EmptyState icon={<Archive />} title="Nothing archived" action={null}>
+          Chats you put away appear here, with their answers and traces intact — and you can bring
+          any of them back.
         </EmptyState>
       )}
-      {error && <p className={styles.error}>{error}</p>}
+      {error && (
+        <p role="alert" className="mt-2 flex items-start gap-2 text-[13px] text-bad-ink">
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          {error}
+        </p>
+      )}
 
       {archived && archived.length > 0 && (
-        <ul className={styles.list}>
-          {archived.map((conversation) => (
-            <li className={styles.item} key={conversation.id}>
-              <span className={styles.title}>{label(conversation)}</span>
-              <Button disabled={busy === conversation.id} onClick={() => void restore(conversation.id)}>
-                {busy === conversation.id ? "Restoring…" : "Restore"}
-              </Button>
-            </li>
-          ))}
-        </ul>
+        <MotionConfig reducedMotion="user">
+          <ul className="-my-1">
+            <AnimatePresence initial={false}>
+              {archived.map((conversation, index) => (
+                <motion.li
+                  key={conversation.id}
+                  layout
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0, transition: { delay: index * 0.03 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                  className="flex items-center gap-3 border-b border-border-soft py-3 last:border-b-0"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="grid size-9 shrink-0 place-items-center rounded-md bg-surface-2 text-muted-foreground [&_svg]:size-[17px]"
+                  >
+                    <MessagesSquare />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-medium text-text">
+                      {label(conversation)}
+                    </p>
+                    <p className="truncate text-[12.5px] text-muted-foreground">
+                      {details(conversation)}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={busy === conversation.id}
+                    onClick={() => void restore(conversation)}
+                  >
+                    <RotateCcw aria-hidden="true" />
+                    {busy === conversation.id ? "Restoring…" : "Restore"}
+                  </Button>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        </MotionConfig>
       )}
     </Card>
   );
