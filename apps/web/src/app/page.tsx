@@ -9,7 +9,8 @@
  *
  * Three states, and the second is the one worth being careful about:
  *
- *   1. Signed out → the sign-in card.
+ *   1. Signed out → the welcome: the mark, one line on what this is, and the
+ *      sign-in card.
  *   2. Signed in, **no organization yet** → the bootstrap profile, unchanged.
  *      This is a real state, not an edge case: it is every first login, and it
  *      is the only screen from which an organization can be created. Redirecting
@@ -28,10 +29,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { ApiHealth } from "@/components/api-health";
+import { EntryBrand, EntryFrame } from "@/components/screens/entry-frame";
 import { Profile } from "@/components/screens/profile";
 import { SignIn } from "@/components/screens/sign-in";
-import { ApiHealth } from "@/components/api-health";
-import { Page, PageHeader, Stack } from "@/components/ui/page";
 import { createApi } from "@/lib/api-client";
 import { useSession } from "@/lib/auth/session";
 
@@ -67,16 +68,31 @@ export default function Home() {
     };
   }, [api, router, session.who]);
 
-  if (session.who && !checked) return null;
+  // The mark alone while we look, rather than a blank page — it claims nothing.
+  if (session.who && !checked) {
+    return (
+      <EntryFrame>
+        <EntryBrand />
+      </EntryFrame>
+    );
+  }
+
+  if (session.who) {
+    return (
+      <EntryFrame wide footer={<ApiHealth />}>
+        <EntryBrand size="small" wordmark={false} />
+        <Profile />
+      </EntryFrame>
+    );
+  }
 
   return (
-    <Page>
-      <PageHeader
-        title="DataMind"
-        subtitle="Ask questions of your own databases, and see the evidence behind every answer."
-      />
-      <Stack>{session.who ? <Profile /> : <SignIn />}</Stack>
-      <ApiHealth />
-    </Page>
+    <EntryFrame footer={<ApiHealth />}>
+      <EntryBrand heading>
+        <span className="sm:block">Ask your business data a question in plain English.</span>{" "}
+        <span className="sm:block">Get an answer you can check.</span>
+      </EntryBrand>
+      <SignIn />
+    </EntryFrame>
   );
 }
