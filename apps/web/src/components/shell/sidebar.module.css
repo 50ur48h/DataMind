@@ -1,0 +1,303 @@
+/*
+ * The chat rail. Tokens only — a raw hex here is a bug (docs/design.md).
+ *
+ * The rail sits on `--surface-sunken` so the conversation beside it, on
+ * `--bg` with cards lifting off it, reads as the thing you are looking at.
+ * Space does the separating; there is one hairline, where the rail meets the
+ * page, and it earns its place because the two surfaces are close in value.
+ */
+
+/*
+ * **Fixed and full height, not sticky.**
+ *
+ * Sticky kept the rail in the flow, so a long thread could still scroll it —
+ * the page and the rail shared one scrollbar and the rail lost. Fixed takes it
+ * out of the flow entirely: it cannot move, and only its chat list scrolls.
+ * The width it no longer occupies is reserved by a margin in `app-shell`, and
+ * `collapsed.ts` is what keeps the two numbers the same.
+ */
+.rail {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: var(--rail-w);
+  height: 100dvh;
+  background: var(--rail);
+  border-right: 1px solid var(--line);
+  padding: var(--s4);
+  gap: var(--s3);
+}
+
+.railCollapsed {
+  composes: rail;
+  align-items: center;
+  width: var(--rail-w-collapsed);
+  padding: var(--s4) var(--s2);
+  gap: var(--s2);
+}
+
+.head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 40px;
+}
+
+.org {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 40x40 minimum target, per design.md's accessibility rules. */
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.iconButton:hover {
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.newChat {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.newChat:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  /* The only scrolling region in the rail. `min-height: 0` is what lets a flex
+     child actually shrink below its content and scroll. */
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-md);
+  min-height: 40px;
+  padding: 0 var(--space-2);
+}
+
+.item:hover {
+  background: var(--surface);
+}
+
+.itemCurrent {
+  background: var(--primary-soft);
+}
+
+.itemLink {
+  flex: 1 1 auto;
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: var(--space-2) 0;
+}
+
+/* Revealed on hover or keyboard focus — never on hover alone, or the controls
+   would be unreachable without a pointer. */
+.itemActions {
+  display: none;
+  gap: var(--space-1);
+}
+
+.item:hover .itemActions,
+.item:focus-within .itemActions {
+  display: flex;
+}
+
+.itemAction {
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.itemAction:hover {
+  color: var(--fg);
+  background: var(--surface-sunken);
+}
+
+.renameInput {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0 var(--space-2);
+}
+
+.confirm {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.confirmText {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fg-muted);
+  margin-bottom: var(--space-3);
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* The rail is too narrow for a full empty state; a sentence with room around
+   it is the honest amount of presence at 272px. */
+.emptyRail {
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 20px;
+  padding: var(--s5) var(--s2);
+}
+
+.muted {
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 20px;
+  padding: var(--space-2);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 20px;
+  padding: var(--space-2);
+}
+
+.foot {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  padding-top: var(--s3);
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s3);
+  min-height: 40px;
+  padding: var(--s2);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+}
+
+.identity:hover {
+  background: var(--surface);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--clay);
+  color: var(--on-clay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* `min-width: 0` so the address below can actually truncate rather than
+   forcing the grid column wider than the rail. */
+.identityText {
+  min-width: 0;
+}
+
+.person {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footHint {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Stacked above the page below the breakpoint (see app-shell.module.css), so
+   the rail must give its height back and stop being sticky — a 100vh sticky
+   block on top of the page would leave nothing else on screen. */
+@media (max-width: 768px) {
+  .rail,
+  .railCollapsed {
+    position: static;
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .railCollapsed {
+    flex-direction: row;
+    align-items: center;
+  }
+}

@@ -1,0 +1,52 @@
+.orgs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.org {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.orgName {
+  font-weight: 600;
+}
+
+.empty {
+  color: var(--fg-muted);
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-5);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.identity dt {
+  color: var(--fg-muted);
+}
+
+.identity dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Said once, quietly: a missing email claim is a configuration fact, not a fault
+   of the person reading it. */
+.note {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--fg-muted);
+}
+
+.error {
+  color: var(--danger);
+}

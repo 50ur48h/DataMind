@@ -1,0 +1,36 @@
+/*
+ * Rail plus page.
+ *
+ * The rail is `position: fixed` (see sidebar.module.css), so it is out of the
+ * flow and the page has to reserve its width itself. That is the margin below,
+ * and `collapsed.ts` is the single answer both sides read — a copy in each
+ * would be two answers that drift the first time the width changes.
+ */
+
+.shell {
+  --rail-w: 272px;
+  --rail-w-collapsed: 64px;
+  min-height: 100dvh;
+  background: var(--paper);
+}
+
+.main {
+  margin-left: var(--rail-w);
+  /* `min-width: 0` so wide content — a result table, a long SQL block —
+     scrolls inside its own container instead of stretching the page. */
+  min-width: 0;
+}
+
+.mainCollapsed {
+  composes: main;
+  margin-left: var(--rail-w-collapsed);
+}
+
+/* Below the breakpoint the rail stops being fixed (see sidebar.module.css)
+   and sits above the page, so there is no width to reserve. */
+@media (max-width: 768px) {
+  .main,
+  .mainCollapsed {
+    margin-left: 0;
+  }
+}

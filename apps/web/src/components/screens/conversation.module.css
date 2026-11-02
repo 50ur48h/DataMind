@@ -1,0 +1,638 @@
+/*
+ * The thread (D-047).
+ *
+ * **One column.** `.page` is the only width in here: the context strip, every
+ * turn and the composer are all its direct children, so nothing can be wider
+ * than anything else. The column width is also the reading measure, because the
+ * answer fills it — see docs/design.md, *On measure*.
+ */
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--s10) var(--s6) var(--s12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s11);
+}
+
+@media (min-width: 900px) {
+  .page {
+    padding-left: var(--s7);
+    padding-right: var(--s7);
+  }
+}
+
+.contextStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin-bottom: calc(-1 * var(--s8));
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s1) var(--s4);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--clay);
+}
+
+.chipWarn {
+  composes: chip;
+  background: var(--warn-soft);
+  border-color: var(--warn-soft);
+  color: var(--warn);
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s11);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The asker's own words sit right in a tinted bubble; the agent's fill the
+   column. Position carries the distinction as well as colour, so it survives
+   for anyone who cannot see the tint. */
+.turnYou {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 78%;
+  margin: 0;
+  background: var(--clay-soft);
+  border: 1px solid var(--clay-line);
+  border-radius: var(--radius-xl) var(--radius-xl) var(--s2) var(--radius-xl);
+  padding: var(--s5) var(--s6);
+  white-space: pre-wrap;
+}
+
+.turnAgentRow {
+  display: block;
+}
+
+.turnAgent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s7);
+}
+
+/* Attribution is a caption. Nothing here has a fill, a pill, or a weight that
+   competes with the sentence beneath it (docs/design.md, rule 4). */
+.attribution {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-subtle);
+}
+
+.agentMark {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.stateOk,
+.stateNeutral,
+.stateFailed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.stateOk {
+  color: var(--ok);
+}
+
+/* A refusal and a partial answer are correct outcomes, not errors: muted, with
+   the word carrying the meaning (D-044). */
+.stateNeutral {
+  color: var(--ink-muted);
+}
+
+.stateFailed {
+  color: var(--danger);
+}
+
+.stateDot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: currentcolor;
+}
+
+.sep {
+  color: var(--line-strong);
+}
+
+.meta {
+  color: var(--ink-subtle);
+}
+
+/* The one place a serif is used: the words the agent itself produced. */
+.answerText {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 32px;
+  letter-spacing: -0.003em;
+  color: var(--ink);
+  /* `pre-wrap` is gone on purpose: markdown decides the breaks now, and keeping
+     it would double every blank line between blocks. */
+}
+
+/* The answer is markdown now, so its blocks need spacing of their own. Sized
+   down from the body text rather than up: a heading inside a chat reply is a
+   signpost, and one that competes with the answer has taken over. */
+.answerText > :first-child {
+  margin-top: 0;
+}
+.answerText > :last-child {
+  margin-bottom: 0;
+}
+.answerText p {
+  margin: 0 0 0.85em;
+}
+.answerText h1,
+.answerText h2,
+.answerText h3,
+.answerText h4 {
+  font-family: var(--font-sans, inherit);
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 1.4em 0 0.5em;
+  color: var(--ink);
+}
+.answerText h1 { font-size: 21px; }
+.answerText h2 { font-size: 19px; }
+.answerText h3,
+.answerText h4 { font-size: 17px; }
+.answerText ul,
+.answerText ol {
+  margin: 0 0 0.85em;
+  padding-left: 1.5em;
+}
+.answerText li {
+  margin: 0.25em 0;
+  line-height: 1.6;
+}
+.answerText strong {
+  font-weight: 650;
+}
+.answerText code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85em;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.05));
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+/* Wide tables scroll inside the answer rather than stretching the thread. */
+.answerText table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-family: var(--font-sans, inherit);
+  font-size: 15px;
+  margin: 0 0 1em;
+}
+.answerText th,
+.answerText td {
+  border: 1px solid var(--rule, rgba(0, 0, 0, 0.12));
+  padding: 0.4em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.answerText th {
+  font-weight: 600;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.04));
+}
+/* **Numbers right, words left, decided per cell** (B-179).
+   This used to right-align every column but the first, on the assumption that
+   "every number here is money or a count". The assumption was wrong the first
+   time a table had a `Period` column and a `Why it matters` column: prose
+   ragged against the right edge, which is how the owner met it. CSS cannot see
+   a cell's content, so the renderer decides and sets the class. */
+.answerText td.numeric,
+.answerText th.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.answerText td:not(.numeric),
+.answerText th:not(.numeric) {
+  text-align: left;
+  /* Prose in a table cell should wrap rather than push the table wider — a
+     horizontal scrollbar over a `Why it matters` column is the table telling
+     the reader to go and find the rest of the sentence. */
+  white-space: normal;
+  min-width: 12ch;
+}
+.answerText blockquote {
+  margin: 0 0 0.85em;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--rule, rgba(0, 0, 0, 0.15));
+  color: var(--ink-muted, inherit);
+}
+
+.messageText {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* --- The working ------------------------------------------------------------
+   Faint until the response is hovered, the way message actions behave in modern
+   chat apps — but hover is never the only way in. `opacity` rather than
+   `display: none` or `visibility: hidden`, so the control keeps its place in
+   the tab order and its voice in a screen reader the whole time it is faint,
+   and three other rules reveal it: `:focus-within` for a keyboard, `hover:
+   none` for touch, and `[open]` on the element itself — not on an ancestor via
+   `:has()` — so an opened panel can never sit beneath an invisible summary.
+   -------------------------------------------------------------------------- */
+.working {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.working > * {
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.turnAgent:hover .working > *,
+.turnAgent:focus-within .working > *,
+.working > [open] {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .working > * {
+    opacity: 1;
+  }
+}
+
+.disclosure {
+  border-radius: var(--radius-md);
+}
+
+.disclosure[open] {
+  flex: 1 0 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  /* 40px, because `hover: none` above makes this strip the only route in on
+     touch, and design.md's target minimum applies to it like anything else.
+     Quiet is the fill, not the size. */
+  min-height: 40px;
+  padding: 0 var(--s3);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.disclosure[open] .summary {
+  background: var(--inset);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.summaryLabel {
+  white-space: nowrap;
+}
+
+.summaryMeta {
+  color: var(--ink-subtle);
+  font-weight: 500;
+}
+
+.chev {
+  color: var(--ink-subtle);
+  font-size: 9px;
+  transition: transform 140ms ease;
+}
+
+.disclosure[open] .chev {
+  transform: rotate(90deg);
+}
+
+.disclosureBody {
+  padding: var(--s6) var(--s5) var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.step {
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.note {
+  margin: var(--space-3) 0 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 20px;
+  max-width: 68ch;
+}
+
+.failure {
+  margin: var(--space-3) 0 0;
+  color: var(--danger);
+  max-width: 68ch;
+}
+
+/* How the answer was reached, in one line (B-100). Quieter than a limitation
+   and placed above it, because the two answer different questions: this one is
+   "how did you get this", which is not a doubt about the answer, and styling it
+   like a caveat would make every answer look qualified. No rule on the left for
+   the same reason. */
+.method {
+  margin: var(--space-3) 0 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fg-muted);
+  max-width: 68ch;
+}
+
+.methodLabel {
+  font-weight: 600;
+}
+
+/* What the answer does not establish. Quiet by design: a limitation is part of
+   a good answer rather than a failure of one, so it reads as a note beside the
+   reply and is never styled with --danger. The rule on the left is the only
+   thing marking it apart, because a box would make every caveated answer look
+   like a warning. */
+.limitations {
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.limitationsTitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.limitationList {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 20px;
+  max-width: 68ch;
+}
+
+.findings {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.finding {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.findingStatement {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.unsupported {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.citation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.citationToggle {
+  align-self: flex-start;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.composerWrap {
+  position: sticky;
+  bottom: 0;
+  padding: var(--s8) 0 var(--s6);
+  /* Fades the thread out behind the composer rather than cutting it off. */
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0%), var(--paper) 30%);
+}
+
+.composerBox {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--lift-md);
+  padding: var(--s6) var(--s6) var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  transition:
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.composerBox:focus-within {
+  box-shadow: var(--lift-lg);
+  border-color: var(--clay);
+}
+
+.composerLabel {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The box carries the border and the focus state, so the field inside it is
+   bare. Dropping its outline is only allowed because `.composerBox:focus-within`
+   above is a visible change — never remove one without a replacement. */
+.composer {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  line-height: 25px;
+  resize: none;
+  min-height: 56px;
+}
+
+.composer:focus-visible {
+  outline: none;
+}
+
+.composer::placeholder {
+  color: var(--ink-subtle);
+}
+
+.composer:disabled {
+  opacity: 0.5;
+}
+
+/* The chart lives inside the answer card (B-048), so it is set apart from the
+   prose without being lifted out of it. */
+.chart {
+  /* Full width of the card: `width: "container"` on the embed makes vega follow
+     this, so the chart is as wide as the answer rather than a thumbnail beside
+     it. */
+  width: 100%;
+  margin: var(--space-4) 0 0;
+}
+
+.chart > div {
+  width: 100%;
+}
+
+.chart figcaption {
+  margin-top: var(--space-2);
+}
+
+/* A refusal, in the place the chart would have been. Quiet: it is an
+   explanation, not a warning — nothing about the answer's truth changed. */
+.chartNote {
+  margin: var(--space-4) 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.specToggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.spec {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+}
+
+/* **What the question cost**, sitting in the same quiet strip as Evidence and
+   the trace: revealed on hover like its neighbours, and reachable by keyboard
+   and on touch through the rules above, which apply to every child of
+   `.working` rather than to any one of them. Set at the same weight as
+   `.summaryMeta` — a number a person may want and never needs, which is
+   design.md rule 4's ordering. */
+.cost {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s1);
+  padding: 2px 0;
+  font-size: 11.5px;
+  line-height: 18px;
+  color: var(--ink-subtle);
+}
+
+.costAmount {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.costMeta {
+  color: var(--ink-subtle);
+}
+
+/* How far through its allowance a run is (B-177). Quiet by default — it is
+   orientation, not news — and warmer once a ceiling is close, because at that
+   point it is telling the reader something about the answer they are about
+   to get. */
+.progress {
+  margin: 0.35rem 0 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted, #6b6b6b);
+}
+.progressClose {
+  composes: progress;
+  color: var(--warn-ink, #8a5a12);
+}
