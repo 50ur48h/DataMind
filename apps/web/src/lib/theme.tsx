@@ -20,12 +20,12 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { createPersisted } from "./persisted";
+import { PALETTE_STORAGE_KEY, THEME_STORAGE_KEY } from "./theme-keys";
 
 export type Theme = "light" | "dark";
 
-/** Shared with the pre-paint script in `layout.tsx`, which cannot import this. */
-export const THEME_STORAGE_KEY = "dataagent.theme";
-export const PALETTE_STORAGE_KEY = "dataagent.palette";
+/** Shared with the pre-paint script in `layout.tsx` (see `theme-keys.ts`). */
+export { PALETTE_STORAGE_KEY, THEME_STORAGE_KEY };
 
 export const PALETTES = [
   { key: "sage", name: "Sage", accent: "#6e9277", bg: "#f4f6f1" },

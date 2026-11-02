@@ -24,7 +24,7 @@ export default function CatalogPage({
         title="Catalog"
         subtitle="What this database holds, and what may be seen of it."
         icon={<Table2 />}
-        back={{ href: `/orgs/${orgId}/data-sources`, label: "Data sources" }}
+        back={{ href: `/orgs/${orgId}/data-sources`, label: "Back to data sources" }}
       />
       {session.who ? (
         <CatalogBrowser orgId={orgId} dataSourceId={dataSourceId} role={role} />

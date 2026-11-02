@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataSources } from "./data-sources";
@@ -102,7 +102,10 @@ describe("<DataSources />", () => {
     expect(await screen.findByText("Pizza demo")).toBeInTheDocument();
     expect(screen.getByText("localhost:6543/pizza")).toBeInTheDocument();
     expect(screen.getByText("read-only verified")).toBeInTheDocument();
-    expect(screen.getByText("PostgreSQL")).toBeInTheDocument();
+    // Scoped to the source: the register form below offers the engine by the
+    // same name, as one of its choices.
+    const listed = screen.getByText("Pizza demo").closest("li") as HTMLElement;
+    expect(within(listed).getByText("PostgreSQL")).toBeInTheDocument();
     // The mode itself, not a green tick: `prefer` may not be encrypted at all.
     expect(screen.getByText("TLS: prefer")).toBeInTheDocument();
     // The account is identified without being handed back.

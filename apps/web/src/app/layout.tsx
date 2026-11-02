@@ -7,7 +7,7 @@ import "@fontsource-variable/jetbrains-mono";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/lib/auth/session";
-import { PALETTE_STORAGE_KEY, THEME_STORAGE_KEY } from "@/lib/theme";
+import { PALETTE_STORAGE_KEY, THEME_STORAGE_KEY } from "@/lib/theme-keys";
 
 import "./globals.css";
 

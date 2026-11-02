@@ -30,6 +30,7 @@ import { authConfig, missingEntraSettings, type AuthConfig } from "./config";
 // their opaque subject id.
 const OIDC_SCOPES = ["openid", "profile", "email"];
 import {
+  DevTokenRefused,
   forgetDevSubject,
   mintDevToken,
   rememberDevSubject,
@@ -112,7 +113,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setDevToken(identity.token);
         setWho(identity.subject);
       })
-      .catch(() => forgetDevSubject());
+      // Only a refusal makes the remembered subject worthless; an aborted or
+      // failed request (a navigation mid-fetch) leaves it for the next page.
+      .catch((cause: unknown) => {
+        if (cause instanceof DevTokenRefused) forgetDevSubject();
+      });
   }, [config.mode]);
 
   useEffect(() => {

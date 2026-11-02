@@ -9,6 +9,12 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+### Changed
+- A new look, "Calm": seven soft colour palettes (Sage by default) with a dark
+  mode, a serif voice for answers, and answers shown as charts, sortable tables,
+  number cards and highlighted changes, with the query behind every number one
+  click away.
+
 ### Security
 - Every query the platform runs against a customer's database is checked before
   it is sent: one statement, read-only, no system schemas, and every table and

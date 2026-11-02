@@ -24,7 +24,7 @@ export default function DefinitionsPage({
         title="Definitions"
         subtitle="What a metric means in this database — and which of those meanings DataMind enforces on the queries it writes."
         icon={<BookMarked />}
-        back={{ href: `/orgs/${orgId}/data-sources`, label: "Data sources" }}
+        back={{ href: `/orgs/${orgId}/data-sources`, label: "Back to data sources" }}
       />
       {session.who ? (
         <Definitions orgId={orgId} dataSourceId={dataSourceId} role={role} />

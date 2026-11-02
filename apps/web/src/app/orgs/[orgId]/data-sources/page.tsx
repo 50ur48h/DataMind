@@ -20,7 +20,7 @@ export default function DataSourcesPage({ params }: { params: Promise<{ orgId: s
         title="Data sources"
         subtitle="The databases this organization asks questions about. Read-only, always."
         icon={<Database />}
-        back={{ href: `/orgs/${orgId}/settings`, label: "Settings" }}
+        back={{ href: `/orgs/${orgId}/settings`, label: "Back to settings" }}
       />
       {session.who ? <DataSources orgId={orgId} role={role} /> : <SignIn />}
     </Page>
