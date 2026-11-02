@@ -363,10 +363,6 @@
   .sql-code .num { color: var(--code-str); }
 }
 
-/* SQL keyword tinting via the CSS Custom Highlight API (see sql-block.tsx). */
-::highlight(sql-kw) { color: var(--code-kw); }
-::highlight(sql-str) { color: var(--code-str); }
-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
