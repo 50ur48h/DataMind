@@ -208,7 +208,7 @@ function TableBlock({ node }: { node: HastNode | undefined }) {
   const built = useMemo(() => (derived ? buildChart(derived.spec, readChartTheme()) : null), [derived]);
   const [view, setView] = useState<"chart" | "table">("chart");
   const makeOption = useCallback(
-    () => (derived ? (buildChart(derived.spec, readChartTheme())?.option ?? null) : null),
+    (width: number) => (derived ? (buildChart(derived.spec, readChartTheme(), { width })?.option ?? null) : null),
     [derived],
   );
 

@@ -297,7 +297,7 @@ interface Item {
 }
 
 /** Horizontal bars that go left (fell) or right (grew); the biggest faller is called out. */
-function diverging(items: Item[], theme: ChartTheme, valueTitle: string, format: Format): Record<string, unknown> {
+function diverging(items: Item[], theme: ChartTheme, valueTitle: string, format: Format, narrow: boolean): Record<string, unknown> {
   const sorted = [...items].sort((a, b) => a.value - b.value);
   const lowest = sorted[0];
   const highlight = lowest && lowest.value < 0 ? lowest.name : null;
@@ -307,7 +307,7 @@ function diverging(items: Item[], theme: ChartTheme, valueTitle: string, format:
     textStyle: { fontFamily: theme.font },
     animationDuration: 900,
     animationEasing: "cubicOut",
-    grid: grid(6, 56),
+    grid: grid(6, narrow ? 44 : 56),
     tooltip: tooltip(theme, {
       trigger: "axis",
       axisPointer: { type: "shadow", shadowStyle: { color: rgba(theme.muted, 0.07) } },
@@ -332,11 +332,13 @@ function diverging(items: Item[], theme: ChartTheme, valueTitle: string, format:
       axisTick: { show: false },
       axisLabel: {
         color: theme.text,
-        fontSize: 12,
-        margin: 14,
+        fontSize: narrow ? 11 : 12,
+        margin: narrow ? 8 : 14,
         fontFamily: theme.font,
+        width: narrow ? 92 : 200,
+        overflow: "truncate",
         formatter: (v: string) => (v === highlight ? `{hl|${v}}` : v),
-        rich: { hl: { color: theme.bad, fontWeight: 700, fontSize: 12, fontFamily: theme.font } },
+        rich: { hl: { color: theme.bad, fontWeight: 700, fontSize: narrow ? 11 : 12, fontFamily: theme.font } },
       },
     },
     series: [
@@ -380,7 +382,7 @@ function diverging(items: Item[], theme: ChartTheme, valueTitle: string, format:
 }
 
 /** A ranked list of things as soft horizontal bars, the largest in the accent. */
-function ranked(items: Item[], theme: ChartTheme, valueTitle: string, format: Format): Record<string, unknown> {
+function ranked(items: Item[], theme: ChartTheme, valueTitle: string, format: Format, narrow: boolean): Record<string, unknown> {
   // ECharts draws the first category at the bottom; a reader expects the
   // query's first row at the top.
   const ordered = [...items].reverse();
@@ -393,7 +395,7 @@ function ranked(items: Item[], theme: ChartTheme, valueTitle: string, format: Fo
     textStyle: { fontFamily: theme.font },
     animationDuration: 900,
     animationEasing: "cubicOut",
-    grid: grid(6, 64),
+    grid: grid(6, narrow ? 48 : 64),
     tooltip: tooltip(theme, {
       trigger: "axis",
       axisPointer: { type: "shadow", shadowStyle: { color: rgba(theme.muted, 0.07) } },
@@ -407,10 +409,10 @@ function ranked(items: Item[], theme: ChartTheme, valueTitle: string, format: Fo
       axisTick: { show: false },
       axisLabel: {
         color: theme.text,
-        fontSize: 12,
-        margin: 14,
+        fontSize: narrow ? 11 : 12,
+        margin: narrow ? 8 : 14,
         fontFamily: theme.font,
-        width: 180,
+        width: narrow ? 92 : 200,
         overflow: "truncate",
       },
     },
@@ -461,7 +463,12 @@ function titleOf(spec: Record<string, unknown>): string | null {
  * Pure: the same spec and theme always give the same option, which is what the
  * unit tests hold it to.
  */
-export function buildChart(spec: Record<string, unknown>, theme: ChartTheme): BuiltChart | null {
+export function buildChart(
+  spec: Record<string, unknown>,
+  theme: ChartTheme,
+  context: { width?: number } = {},
+): BuiltChart | null {
+  const narrow = (context.width ?? 800) < 520;
   const mark = markOf(spec.mark);
   const encoding = (spec.encoding ?? {}) as Record<string, unknown>;
   const x = channel(encoding.x);
@@ -540,7 +547,9 @@ export function buildChart(spec: Record<string, unknown>, theme: ChartTheme): Bu
     const hasNeg = items.some((item) => item.value < 0);
     const hasPos = items.some((item) => item.value > 0);
     const option =
-      hasNeg && hasPos ? diverging(items, theme, y.title, format) : ranked(items, theme, y.title, format);
+      hasNeg && hasPos
+        ? diverging(items, theme, y.title, format, narrow)
+        : ranked(items, theme, y.title, format, narrow);
     return { option, title, subtitle, height: Math.min(640, Math.max(170, items.length * 30 + 30)) };
   }
 

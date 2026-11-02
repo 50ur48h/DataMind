@@ -14,7 +14,10 @@ import { useEffect, useRef, useState } from "react";
 import { useAppearanceVersion } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-export type MakeOption = () => Record<string, unknown> | null;
+export type MakeOption = (width: number) => Record<string, unknown> | null;
+
+/** The width below which charts use their compact layout. */
+const NARROW = 520;
 
 export function EChart({
   makeOption,
@@ -43,7 +46,8 @@ export function EChart({
       try {
         const { echarts } = await import("@/lib/echarts");
         if (disposed) return;
-        const option = makeOption();
+        let width = element.clientWidth;
+        const option = makeOption(width);
         if (!option) {
           setFailed(true);
           return;
@@ -52,7 +56,17 @@ export function EChart({
         instance.setOption(option);
         chart = instance;
         if (typeof ResizeObserver !== "undefined") {
-          observer = new ResizeObserver(() => instance.resize());
+          observer = new ResizeObserver(() => {
+            const next = element.clientWidth;
+            // Crossing into or out of the compact layout redraws; otherwise
+            // the same drawing is simply resized.
+            if ((next < NARROW) !== (width < NARROW)) {
+              const redrawn = makeOption(next);
+              if (redrawn) instance.setOption(redrawn, { notMerge: true });
+            }
+            width = next;
+            instance.resize();
+          });
           observer.observe(element);
         }
       } catch {

@@ -36,8 +36,8 @@ export function Figure({
       )}
     >
       {(title || actions || controls) && (
-        <figcaption className="mb-2 flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <figcaption className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+          <div className="min-w-0 flex-1 basis-[220px]">
             {title && (
               <div className="font-serif text-[17px] leading-snug font-semibold text-text">{title}</div>
             )}

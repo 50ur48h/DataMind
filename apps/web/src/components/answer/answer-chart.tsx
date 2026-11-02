@@ -48,7 +48,7 @@ export function AnswerChart({ chart }: { chart: RunChart | null | undefined }) {
 
   const built = useMemo(() => (spec ? buildChart(spec, NEUTRAL) : null), [spec]);
   const makeOption = useCallback(
-    () => (spec ? (buildChart(spec, readChartTheme())?.option ?? null) : null),
+    (width: number) => (spec ? (buildChart(spec, readChartTheme(), { width })?.option ?? null) : null),
     [spec],
   );
 
