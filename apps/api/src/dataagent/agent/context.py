@@ -476,7 +476,9 @@ class ContextBundle:
         control: `loop.research` checks every proposed statement whether or not
         this note was accurate (4.3).
         """
-        return replace(self, capability_note=note)
+        return replace(
+            self, capability_note=" ".join(part for part in (self.capability_note, note) if part)
+        )
 
 
 class ContextTooLargeError(Exception):
@@ -832,6 +834,10 @@ async def build_context(
     more broadly only when it matched nothing at all. A question with nouns of
     its own is therefore never pulled back toward the tables of the question
     before it.
+
+    When both searches miss, a selected source supplies a bounded catalog
+    overview. It is labelled discovery rather than relevance, so an ordinary
+    performance question is not refused merely because it named no schema term.
     """
     from dataagent.catalog.search import search_cards
 
@@ -856,8 +862,34 @@ async def build_context(
         hits = await search(thread)
         from_thread = bool(hits)
     cards = tuple(TableCard.from_hit(hit) for hit in hits if hit.card_text)
+    if not cards and data_source_id is not None:
+        # Broad questions can name a period without naming a business measure.
+        # A lexical miss is not evidence that the source cannot answer (B-185).
+        # Offer a bounded overview, never the entire catalog, and do not claim
+        # these cards matched the question. Existing prompt trimming still holds.
+        from dataagent.catalog.browse import NoCatalogError, active_catalog
+        from dataagent.catalog.cards import offers_measures
+        from dataagent.catalog.search import MAX_LIMIT
+
+        try:
+            catalog = await active_catalog(org_id, data_source_id)
+        except NoCatalogError:
+            pass
+        else:
+            overview = sorted(
+                cards_from_catalog(data_source_id, catalog.tables),
+                key=lambda card: (
+                    not offers_measures(card.card_text),
+                    card.schema_name,
+                    card.table_name,
+                ),
+            )
+            cards = tuple(
+                replace(card, found_by="catalog_fallback")
+                for card in overview[: max(1, min(limit, MAX_LIMIT))]
+            )
     restrictions = await _restrictions_for(org_id, cards)
-    return ContextBundle(
+    bundle = ContextBundle(
         question=question,
         history=tuple(history),
         cards=cards,
@@ -869,6 +901,14 @@ async def build_context(
         # question has the same answer in a year's time.
         as_of=as_of if as_of is not None else datetime.now(UTC).date(),
     )
+    if any(card.found_by == "catalog_fallback" for card in cards):
+        bundle = bundle.with_capability_note(
+            "The question's words matched no table cards. The reference cards are a "
+            "bounded catalog overview, with tables offering measures first, not relevance "
+            "matches. Decide from their contents whether they can answer the question; "
+            "an unsuccessful search does not establish that data is missing."
+        )
+    return bundle
 
 
 async def _restrictions_for(
