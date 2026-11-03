@@ -135,9 +135,10 @@ async function organization(page: Page): Promise<void> {
   }
   await expect(listed).toBeVisible();
 
-  // `/orgs/{id}` is a redirect to the chat now; following it is what a person
-  // clicking from the bootstrap screen actually does.
-  await page.getByRole("button", { name: "Members" }).first().click();
+  // Onboarding now opens setup directly; verify that destination before chat.
+  await page.getByRole("button", { name: "Set up", exact: true }).first().click();
+  await page.waitForURL(/\/orgs\/[0-9a-f-]{36}\/settings$/, { timeout: 30_000 });
+  await newChat(page);
   await page.waitForURL(chat, { timeout: 30_000 });
 }
 

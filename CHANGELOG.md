@@ -9,6 +9,7 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+
 - Example settings now use Meta Muse Spark for every chat role, with embeddings
   disabled so chat requires only a Meta API key.
 
