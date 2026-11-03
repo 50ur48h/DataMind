@@ -9,6 +9,9 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+- Monthly comparison tables now plot matching sales columns as separate coloured
+  lines on one chart, with a legend and hover values for both.
+
 - Business questions default to visual reviews with KPI cards, inline charts,
   colour highlights and plain English; ask for a short answer to keep it brief.
   Earlier evidence and complete monthly reports survive through revision.

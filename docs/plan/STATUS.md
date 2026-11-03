@@ -1,8 +1,25 @@
 # STATUS — DataMind build
 
-## Current work — Calm business reviews (B-188, B-189; 2026-11-03)
+## Current work — Comparison chart lines (B-193; 2026-11-03)
 
-Implemented locally on `b188-calm-performance-report`, ready for owner review. The owner
+The answer table contained both entities, but the inline chart selected only
+its final numeric column. Matching measures in a period table now become
+separate coloured lines with a legend and shared hover values. Orders stay off
+a sales axis; different currency prefixes and sales definitions stay separate.
+The original table, CSV and chart-image exports remain available.
+
+Proof: the returned chat-message test reaches ECharts with both named sales
+series and distinct colours, excluding order counts; the live existing answer
+now renders both lines without another model run. Local screenshots remain
+under gitignored `.SampleData/`. No dependencies or API changes; no architecture
+deviation (Phase 13, architecture Parts 4.2–4.5).
+
+Validation: web lint/typecheck and all 303 tests pass (19 files), including
+the returned-message regression; live chart and shared hover verified in Chrome.
+
+## Previous work — Calm business reviews (B-188, B-189; merged PR #9)
+
+Merged by the owner in PR #9. The owner
 requested the design's summary → four KPIs → interpretation → outlet bar chart
 → interpretation → daily line chart → takeaways in the real app, with USD for
 the presentation. This uses the existing Markdown-to-cards/charts renderer,
