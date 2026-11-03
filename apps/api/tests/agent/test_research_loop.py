@@ -13,6 +13,7 @@ ceiling; a budget of two proves the same rule and proves it in a second.
 from __future__ import annotations
 
 import uuid
+from typing import cast
 
 from sqlalchemy import URL, text
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -129,6 +130,33 @@ def _script_investigation(fake_llm: FakeLLM, steps: int, *, finish: bool = True)
 # ---------------------------------------------------------------------------
 # Going on
 # ---------------------------------------------------------------------------
+
+
+async def test_a_period_only_search_miss_reaches_the_live_planner(
+    context: ToolContext,
+    fake_llm: FakeLLM,
+) -> None:
+    _script_investigation(fake_llm, 1)
+    run_id = await _run_for(context, "How we did in december 2025?")
+
+    await _execute(context, run_id)
+
+    prompt = fake_llm.calls_for("sql")[0].prompt
+    assert "### table public." in prompt
+    assert "bounded catalog overview" in prompt
+    assert "Never invent a data cutoff" in prompt
+    compose_prompt = fake_llm.calls_for("compose")[0].prompt
+    assert "set unanswered to 'this question'" in compose_prompt
+    assert "rather than report zero sales or profit" in compose_prompt
+    assert "set answered to false" not in compose_prompt
+    events = await read_events(org_id=context.org_id, run_id=run_id)
+    selected = next(event for event in events if event.type == "context_selected")
+    assert selected.payload["tables"]
+    found_by = cast(dict[str, str], selected.payload["tables_found_by"])
+    assert "catalog_fallback" in found_by.values()
+    view = await runs.get_run(org_id=context.org_id, run_id=run_id)
+    assert view.status == "completed"
+    assert view.answer == "Here is what I found."
 
 
 async def test_a_four_step_investigation_runs_every_step(

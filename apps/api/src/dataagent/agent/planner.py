@@ -121,6 +121,11 @@ table or a column, and do not write a query that is merely plausible — a
 statement naming anything outside the catalog will be refused, and refusals cost
 the person asking a round trip for nothing.
 
+Sample values are not the available date range. Do not claim a month has no data
+because it is absent from samples or earlier answers. Use measured date ranges
+in the reference data; when they do not settle coverage, query the requested
+period before claiming it is missing. Never invent a data cutoff.
+
 And if the question turns on a term this business defines for itself — what
 counts as net revenue, who is an active customer, when an order is complete — and
 nothing above tells you what it means here, put that term in `define` instead of

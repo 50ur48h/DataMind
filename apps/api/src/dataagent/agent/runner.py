@@ -875,8 +875,13 @@ async def _compose(
         f"{results}{caveat}{revise}\n\n"
         "Answer the question in plain words for the person who asked. Use only "
         "these numbers. Cite in supported_by the execution ids your answer rests "
-        "on. If the evidence does not actually answer the question, set answered "
-        "to false and say what is missing.\n\n"
+        "on. If the evidence does not actually answer the question, name the missing "
+        "part in unanswered and explain it in the answer. If no part can be answered, "
+        "set unanswered to 'this question' and leave supported_by empty. A query "
+        "finding no records for a period does not establish zero business activity: "
+        "say there is no data for that period rather than report zero sales or profit. "
+        "Cite executions for the substantive results you can report, not empty "
+        "executions as if they answered the business question.\n\n"
         # **B-109, second lever.** The same instruction is already on
         # `FinalizeIn.answer`'s field description, and that description was
         # *measured* reaching the model — it is in `model_json_schema()`, the

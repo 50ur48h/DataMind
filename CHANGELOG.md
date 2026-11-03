@@ -9,6 +9,10 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+- Broad questions that match no table descriptions now receive a bounded catalog
+  overview before the agent decides whether it can answer; sample dates are no
+  longer presented to the planner as a basis for inventing a missing period.
+
 ### Changed
 - A new look, "Calm": seven soft colour palettes (Sage by default) with a dark
   mode, a serif voice for answers, and answers shown as charts, sortable tables,

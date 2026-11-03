@@ -1,5 +1,27 @@
 # STATUS — DataMind build
 
+## Current bug fix — B-185 (2026-11-03, pending owner review)
+
+A period-only performance question could select no table cards, then refuse
+without executing any SQL and invent a data cutoff. When question and thread
+search both miss, the selected source now supplies a bounded catalog overview,
+with measure-bearing cards first and an explicit discovery label. It preserves
+column restrictions, source/tenant scope and the existing prompt budget.
+Capability notes accumulate so the runner cannot overwrite the fallback label.
+The planner is told that samples do not establish date coverage; the composer
+now uses `unanswered` rather than instructing the removed `answered` field.
+
+Live verification reached database queries and a stored, supported answer for
+the previously refused question. That answer remained partial because result
+previews did not establish an overall total (B-187). Missing-period handling
+still needs deterministic evidence semantics (B-186); prompt guidance alone
+does not close that gap. The local embedding service also rejected its configured
+credential, explaining why retrieval used only wording. No credential changed.
+Customer-specific diagnostic material stays under gitignored `.SampleData/`.
+
+Plan/architecture: Phase 13 reliability fix; architecture Parts 4.3, 4.5, 4.8,
+5.2. No design deviation. The owner merges the PR.
+
 Current position: **Phase 13 — the chat product. WP13.1a (#121), WP13.1b
                   (#122), WP13.2 (#123), WP13.3 (#124) and WP13.4 (#125)
                   merged. WP13.10 (#130) and WP13.11 (#131) merged too.**

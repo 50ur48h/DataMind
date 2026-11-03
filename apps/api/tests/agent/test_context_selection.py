@@ -90,18 +90,43 @@ async def test_a_question_selects_the_tables_its_words_point_at(context: ToolCon
 async def test_a_question_that_matches_nothing_still_produces_a_usable_prompt(
     context: ToolContext,
 ) -> None:
-    """A prompt with no cards is thin, not broken. The model still has the rules
-    and the tools, and ``search_tables`` is how it recovers."""
+    """A search miss supplies discovery context rather than an absent-data claim."""
     bundle = await build_context(
         org_id=context.org_id,
         question="what is our cryptocurrency exposure?",
         data_source_id=context.data_source_id,
     )
 
-    assert bundle.cards == ()
+    assert bundle.cards
+    assert all(card.found_by == "catalog_fallback" for card in bundle.cards)
     messages = render(bundle)
-    assert "[L4]" not in messages[0].content
+    assert "[L4]" in messages[0].content
+    assert "not relevance matches" in messages[0].content
     assert messages[1].content == "what is our cryptocurrency exposure?"
+
+
+async def test_a_period_only_question_reaches_the_planner_with_catalog_cards(
+    context: ToolContext,
+) -> None:
+    bundle = await build_context(
+        org_id=context.org_id,
+        question="How we did in december 2025?",
+        data_source_id=context.data_source_id,
+        limit=2,
+    )
+    system = render(bundle)[0].content
+
+    assert 0 < len(bundle.cards) <= 2
+    assert all(card.data_source_id == context.data_source_id for card in bundle.cards)
+    assert all(f"### table {card.qualified}" in system for card in bundle.cards)
+    assert "an unsuccessful search does not establish that data is missing" in system
+
+
+async def test_a_search_miss_without_a_selected_source_does_not_browse_other_sources(
+    context: ToolContext,
+) -> None:
+    bundle = await build_context(org_id=context.org_id, question="How we did in december 2025?")
+    assert bundle.cards == ()
 
 
 async def test_a_masked_column_is_summarised_into_the_prompt(
