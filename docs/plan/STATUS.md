@@ -1,6 +1,31 @@
 # STATUS — DataMind build
 
-## Current work — Project README rewrite (B-194; 2026-11-03)
+## Current work — Meta-only example environment (B-196; 2026-11-03)
+
+The example now selects Meta, routes small/mid tasks to Muse Spark 1.3 and
+strong tasks to Muse Wonder 1.0, includes both prices and an explicit reasoning
+setting, and leaves embeddings disabled. The only active provider-key setting
+is META_API_KEY. Optional legacy keys remain commented compatibility labels,
+required by check_env because the unchanged application still supports them.
+No application code, Compose services, or real .env credentials were changed.
+
+Live proof in an isolated process inside the running API container removed the
+OpenAI key, asserted no embedder, and used the example's provider/model values.
+Both models returned parsed responses through the LLM service; matching usage
+ledger rows recorded Spark 142 input / 117 output tokens and Wonder 34 input /
+167 output tokens, with non-null costs and provider=meta. This verifies the
+local Meta account and container, not the separate Railway deployment.
+
+An omitted LLM_PROVIDERS still uses the application's built-in default; the
+example explicitly explains that Railway must receive runtime variables.
+Changing that code default is outside the owner's requested configuration-only
+scope. Existing llm_smoke.py failed its metered path because it invents a run ID
+without a run row; B-197 records the repair. Verification used supported
+unattached, metered calls instead. Targeted Meta/provider-registry tests pass;
+check_env and its 14 self-tests, status/backlog guards and diff whitespace checks
+pass. No architecture deviation.
+
+## Previous work — Project README rewrite (B-194; merged PR #12)
 
 Owner approved this revision for a new PR after merging the first README in
 PR #11. Work is on `fix-readme-business-story`, based on fresh `origin/main`.
