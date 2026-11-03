@@ -1,6 +1,23 @@
 # STATUS — DataMind build
 
-## Current work — Comparison chart lines (B-193; 2026-11-03)
+## Current work — Project README rewrite (B-194; 2026-11-03)
+
+Replaced the old README, including its intro media and shared demo sign-in
+details, with a plain-English product guide, architecture-based research flow,
+technology badges and stack table, and a complete local Compose setup. The
+setup uses an organization created by the reader and manual demo registration,
+so it does not rely on membership in the provisioner's machine-owned Demo org.
+It covers keys, model/pricing configuration, migrations, read-only discovery,
+profiling, a first investigation and an unanswerable item-level question, host
+development, and common setup failures. No application behavior changes.
+
+Validation: setup targets checked with Make's dry run; repository links,
+environment names, service ports and dependency versions checked against source.
+No stack reset, demo reseed, or paid model calls were needed for this docs change.
+The host web template omits the explicit local auth settings: README supplies
+them, and B-195 tracks correcting the template itself. No architecture deviation.
+
+## Previous work — Comparison chart lines (B-193; merged PR #10)
 
 The answer table contained both entities, but the inline chart selected only
 its final numeric column. Matching measures in a period table now become
