@@ -9,6 +9,10 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+- Business questions default to visual reviews with KPI cards, inline charts,
+  colour highlights and plain English; ask for a short answer to keep it brief.
+  Earlier evidence and complete monthly reports survive through revision.
+
 - Broad questions that match no table descriptions now receive a bounded catalog
   overview before the agent decides whether it can answer; sample dates are no
   longer presented to the planner as a basis for inventing a missing period.

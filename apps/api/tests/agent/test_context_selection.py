@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from sqlalchemy import URL, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from dataagent.agent.context import build_context, render
 from dataagent.agent.tools.base import ToolContext
-from dataagent.catalog import policies
+from dataagent.catalog import policies, search
 from dataagent.dal import policy as dal_policy
 
 
@@ -90,7 +91,7 @@ async def test_a_question_selects_the_tables_its_words_point_at(context: ToolCon
 async def test_a_question_that_matches_nothing_still_produces_a_usable_prompt(
     context: ToolContext,
 ) -> None:
-    """A search miss supplies discovery context rather than an absent-data claim."""
+    """A search miss supplies bounded discovery context, not an absence claim."""
     bundle = await build_context(
         org_id=context.org_id,
         question="what is our cryptocurrency exposure?",
@@ -127,6 +128,29 @@ async def test_a_search_miss_without_a_selected_source_does_not_browse_other_sou
 ) -> None:
     bundle = await build_context(org_id=context.org_id, question="How we did in december 2025?")
     assert bundle.cards == ()
+
+
+async def test_a_broad_question_expands_a_single_lexical_hit(
+    context: ToolContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hits = await search.search_cards(context.org_id, "shops", data_source_id=context.data_source_id)
+    assert hits
+
+    async def weak_search(*_args: object, **_kwargs: object) -> list[search.CardHit]:
+        return hits[:1]
+
+    monkeypatch.setattr(search, "search_cards", weak_search)
+    bundle = await build_context(
+        org_id=context.org_id,
+        question="How did we do in December 2025?",
+        data_source_id=context.data_source_id,
+        limit=2,
+    )
+    assert len(bundle.cards) == 2
+    assert bundle.cards[0].found_by == hits[0].found_by
+    assert any(card.found_by == "catalog_fallback" for card in bundle.cards)
+    assert "broad performance question" in render(bundle)[0].content
 
 
 async def test_a_masked_column_is_summarised_into_the_prompt(

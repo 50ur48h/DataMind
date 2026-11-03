@@ -268,6 +268,24 @@ class ResearchState(BaseModel):
     answer: ComposedAnswer | None     # text, cited finding ids, assumptions, limitations, chart specs
 ```
 
+**Business reviews use the existing Markdown answer channel** (B-188). Planning
+and reflection gather company aggregates, bounded outlet comparisons and narrow
+time series before composition. The renderer turns `Metric / Value / Change /
+Comparison` tables into KPI cards, category/change tables into bars and
+date/value tables into lines, preserving their position among the prose and
+offering the underlying tables. This is presentation of the answer's own values,
+not new evidence or a security boundary. A review must identify unsupported
+parts rather than fabricate a card. Answer text is bounded at 8,000 characters;
+the model-call and output-token ceilings remain unchanged. Critic re-entry
+retains earlier previews within the same three-result window (B-189), so adding
+a query does not silently erase the summary it was meant to supplement.
+Visual presentation and plain English are defaults for supported business
+answers; explicit brevity requests opt out of the full review before planning.
+Single facts and definitions stay proportionate. Directional highlighting spans
+adjacent Markdown text/bold nodes without changing the values or interpreting
+HTML. An empty search on a selected source can supply a bounded, labelled catalog
+overview, so a broad question need not name a schema term to reach the planner.
+
 **The budget is stored beside this state, not inside it** (DECISIONS **D-023**).
 `BudgetState` — iterations, queries, llm_calls, tokens, wall_seconds, used against
 max — lives in `agent_runs.budget`, the column 10.1 already gives it, while

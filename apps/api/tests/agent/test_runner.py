@@ -220,7 +220,8 @@ async def test_the_composer_is_told_to_write_something_a_person_can_read(
     # **B-179 and B-180**, in the same prompt and for the same reader: money
     # written the way money is written, and an action that is something to do
     # rather than a measurement with a verb in front of it.
-    assert "RM 310,817" in composing
+    assert "USD 310,817" in composing
+    assert "Do not guess a currency" in composing
     assert "something a person could start this week" in composing
     assert "wearing a recommendation" in composing
 
@@ -971,6 +972,45 @@ async def test_the_re_entry_happens_once_and_only_once(
     assert len(fake_llm.calls_for("critic")) == 2
     assert len(fake_llm.calls_for("compose")) == 2, "two drafts, not three"
     assert outcome.status == "completed", "a rejected second draft is still an ending"
+
+
+async def test_reentry_keeps_summary_and_outlet_evidence_for_the_final_report(
+    context: ToolContext,
+    fake_llm: FakeLLM,
+) -> None:
+    for sql, done in (
+        ("SELECT 101 AS company_total FROM shops LIMIT 1", False),
+        ("SELECT 202 AS outlet_change FROM regions LIMIT 1", True),
+        ("SELECT 303 AS daily_sales FROM products LIMIT 1", True),
+    ):
+        fake_llm.script(_plan(sql), role="sql", times=1)
+        fake_llm.script(_reflect(done=done), role="plan", times=1)
+    fake_llm.script(_cites_the_execution, role="compose", times=1)
+    fake_llm.script(
+        CriticOut(verdict="revise", reasons=["Include the daily trend."]).model_dump_json(),
+        role="critic",
+        times=1,
+    )
+
+    def final_report(request: object) -> str:
+        prompt = str(getattr(request, "prompt_text", ""))
+        # Column names also occur in execution summaries; require the actual
+        # result previews, not a summary claiming a query once happened.
+        preview_ids = re.findall(r"Result of ([0-9a-f-]{36}):", prompt)
+        assert len(preview_ids) == 3
+        assert all(str(value) in prompt for value in (101, 202, 303))
+        return _final("Company total 101; outlet change 202; daily sales 303.", cite=preview_ids)
+
+    fake_llm.script(final_report, role="compose", times=1)
+    fake_llm.script(_passes(), role="critic", times=1)
+    run_id = await _run_for(context, "Prepare a business review of shops and regions")
+    await _execute(context, run_id)
+
+    view = await runs.get_run(org_id=context.org_id, run_id=run_id)
+    assert view.answer == "Company total 101; outlet change 202; daily sales 303."
+    assert view.state == "answered"
+    assert view.findings[-1].cited
+    assert len(view.findings[-1].support) == 3
 
 
 async def test_the_second_attempt_is_told_what_was_wrong_with_the_first(

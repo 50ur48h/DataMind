@@ -111,7 +111,9 @@ async def _queries_run(context: ToolContext, run_id: uuid.UUID, wired: URL) -> i
         await engine.dispose()
 
 
-def _script_investigation(fake_llm: FakeLLM, steps: int, *, finish: bool = True) -> None:
+def _script_investigation(
+    fake_llm: FakeLLM, steps: int, *, finish: bool = True, answer: str = "Here is what I found."
+) -> None:
     """A distinct query and a distinct finding per iteration.
 
     Distinct because both loop-safety rules would otherwise fire: the same
@@ -121,7 +123,7 @@ def _script_investigation(fake_llm: FakeLLM, steps: int, *, finish: bool = True)
         fake_llm.script(_plan(STEPS[index]), role="sql", times=1)
         last = finish and index == steps - 1
         fake_llm.script(_reflect(done=last, statement=f"finding {index}"), role="plan", times=1)
-    fake_llm.script(_final(), role="compose")
+    fake_llm.script(_final(answer), role="compose")
     # A run now ends with a critic pass (WP9.1). Scripted explicitly rather
     # than defaulted, so a critic that stopped running would fail here.
     fake_llm.script(CriticOut(verdict="pass", reasons=[]).model_dump_json(), role="critic")
@@ -157,6 +159,53 @@ async def test_a_period_only_search_miss_reaches_the_live_planner(
     view = await runs.get_run(org_id=context.org_id, run_id=run_id)
     assert view.status == "completed"
     assert view.answer == "Here is what I found."
+
+
+async def test_business_review_contract_reaches_planner_reflector_and_stored_answer(
+    context: ToolContext,
+    fake_llm: FakeLLM,
+) -> None:
+    report = "Measured context. " * 250 + "\n\n## Takeaways\n\nThe report finishes here."
+    assert len(report) > 4000
+    _script_investigation(fake_llm, 3, answer=report)
+    run_id = await _run_for(context, "How did we do in December 2025, in USD?")
+
+    await _execute(context, run_id)
+
+    for call in fake_llm.calls_for("sql"):
+        assert "### table public." in call.prompt
+        assert "company-wide comparison summary" in call.prompt
+        assert "before limiting the ranking" in " ".join(call.prompt.split())
+    for call in fake_llm.calls_for("plan"):
+        assert "company-wide comparison summary" in call.prompt
+    composed = fake_llm.calls_for("compose")[0].prompt
+    assert "Metric | Value | Change | Comparison" in composed
+    assert "Date | Sales" in composed
+    assert "leave chart.of empty" in composed
+    assert "set unanswered to the empty string" in composed
+    assert "set answered to false" not in composed
+    assert "Sound like a helpful colleague" in composed
+    assert "A column including tax and fees" in composed
+    assert "Keep average spend per order and unit prices to two decimal places" in composed
+    view = await runs.get_run(org_id=context.org_id, run_id=run_id)
+    assert view.status == "completed"
+    assert view.answer == report
+
+
+async def test_a_short_answer_request_does_not_require_a_full_review(
+    context: ToolContext,
+    fake_llm: FakeLLM,
+) -> None:
+    _script_investigation(fake_llm, 1, answer="Sales grew, with a slightly smaller average order.")
+    run_id = await _run_for(context, "How did we do in December 2025? Short answer.")
+    await _execute(context, run_id)
+
+    for call in (*fake_llm.calls_for("sql"), *fake_llm.calls_for("compose")):
+        assert "explicitly asked for a short answer" in call.prompt
+        assert "company-wide comparison summary" not in call.prompt
+    view = await runs.get_run(org_id=context.org_id, run_id=run_id)
+    assert view.answer == "Sales grew, with a slightly smaller average order."
+    assert view.chart is None
 
 
 async def test_a_four_step_investigation_runs_every_step(

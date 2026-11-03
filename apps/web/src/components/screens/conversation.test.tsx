@@ -931,6 +931,74 @@ describe("how far through its allowance a run is", () => {
 });
 
 describe("how an answer is rendered", () => {
+  it("highlights whole directional phrases even when Markdown splits the bold number", async () => {
+    const words = "Sales are up **6.2%** at **$1.42M**. **Outlet A**, down **18.2%**, needs a look. Use `down 9%` as code.";
+    routeFetch({run: {...ANSWERED, answer: words}, messages: [MESSAGES[0], {...MESSAGES[1], content: words}]});
+    render(<ConversationThread orgId="o1" conversationId="c1" />);
+    const answer = await screen.findByTestId("answer-text");
+    expect(answer.querySelector("mark.up")?.textContent).toBe("up 6.2%");
+    expect(answer.querySelector("mark.down")?.textContent).toBe("Outlet A, down 18.2%");
+    expect(answer.querySelector("strong")?.textContent).toBe("$1.42M");
+    expect(answer.querySelector("code")?.textContent).toBe("down 9%");
+    expect(answer.querySelector("code mark")).toBeNull();
+  });
+
+  it("renders a business review from the returned message as four cards and interleaved charts", async () => {
+    const markdown = [
+      "Sales grew, with one outlet needing attention.",
+      "",
+      "| Metric | Value | Change | Comparison |",
+      "| --- | --- | --- | --- |",
+      "| Net sales | RM 12,000 | +20.0% | vs prior month |",
+      "| Orders | 600 | +10.0% | vs prior month |",
+      "| Average order | RM 20.00 | +9.1% | vs prior month |",
+      "| Outlets up | 2 of 3 | 1 fell | comparable outlets |",
+      "",
+      "## Outlet performance",
+      "Outlet C declined while the others grew.",
+      "",
+      "| Outlet | Sales change (%) |",
+      "| --- | --- |",
+      "| Outlet A | +30.0% |",
+      "| Outlet B | +20.0% |",
+      "| Outlet C | -10.0% |",
+      "",
+      "## Daily sales",
+      "The final day shown was the strongest.",
+      "",
+      "| Date | Net sales |",
+      "| --- | --- |",
+      "| 2025-12-01 | RM 300 |",
+      "| 2025-12-02 | RM 350 |",
+      "| 2025-12-03 | RM 400 |",
+      "",
+      "Check Outlet C before assigning a cause.",
+    ].join("\n");
+    routeFetch({
+      run: { ...ANSWERED, answer: markdown, chart: null },
+      messages: [MESSAGES[0], { ...MESSAGES[1], content: markdown }],
+    });
+    render(<ConversationThread orgId="o1" conversationId="c1" />);
+
+    const answer = await screen.findByTestId("answer-text");
+    const cardLabels = ["Net sales", "Orders", "Average order", "Outlets up"];
+    for (const label of cardLabels) {
+      expect(screen.getByText(label, { exact: true }).closest("table")).toBeNull();
+    }
+    expect(screen.getAllByText("vs prior month")).toHaveLength(3);
+    expect(screen.getByText("comparable outlets")).toBeInTheDocument();
+    await waitFor(() => expect(answer.querySelectorAll('[data-testid="table-chart"]')).toHaveLength(2));
+    const figures = [...answer.querySelectorAll("figure")];
+    expect(figures[0]?.textContent).toContain("Sales change (%) by outlet");
+    expect(figures[1]?.textContent).toContain("Net sales by date");
+    expect(answer.textContent?.indexOf("Outlet performance")).toBeLessThan(answer.textContent?.indexOf("Daily sales") ?? 0);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Table$/ })[0]!);
+    expect(screen.getByRole("cell", { name: "Outlet C" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "-10.0%" })).toBeInTheDocument();
+    expect(answer.querySelectorAll('[data-testid="table-chart"]')).toHaveLength(1);
+  });
+
   it("shows headings, lists and tables as structure rather than as characters", async () => {
     // **B-172.** This rendered into a bare `<p>` with `white-space: pre-wrap`,
     // so a heading arrived as a literal `##` and a ranked list as a column of

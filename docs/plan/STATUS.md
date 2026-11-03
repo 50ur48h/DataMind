@@ -1,6 +1,81 @@
 # STATUS — DataMind build
 
-## Current bug fix — B-185 (2026-11-03, pending owner review)
+## Current work — Calm business reviews (B-188, B-189; 2026-11-03)
+
+Implemented locally on `b188-calm-performance-report`, ready for owner review. The owner
+requested the design's summary → four KPIs → interpretation → outlet bar chart
+→ interpretation → daily line chart → takeaways in the real app, with USD for
+the presentation. This uses the existing Markdown-to-cards/charts renderer,
+not a second answer schema or a hard-coded demo.
+
+- A shared review contract reaches planning, reflection and composition. It
+  asks for full-population SQL summaries, bounded outlet movements and a narrow
+  daily series, with one definition, explicit periods and reconciliation.
+- Four-column KPI tables carry the comparison note into each card. Inline
+  charts stay beside the prose and retain their table view and downloads.
+  A browser walk caught the headline value ellipsized in a narrow card; values
+  now size to the card and wrap rather than silently hiding significant digits.
+- The answer bound rises from 4,000 to 8,000 characters so a daily month and
+  closing takeaways fit; model-call and output-token budgets do not change.
+- B-189: critic re-entry now preserves earlier result previews within the same
+  three-result window. A live review previously fetched all three datasets but
+  composed only from the final one after re-entry, discarding the totals.
+- Live inspection also found a period self-join multiplying summary rows.
+  Guidance now requires one row per outlet and reconciliation; deterministic
+  detection is deferred as B-190. Prompt guidance is not an accuracy guarantee.
+- Final browser verification reached four cards, an eight-outlet bar chart and
+  all daily rows, using a report longer than the old answer cap. The company
+  total and daily total reconciled. Critic re-entry kept all three datasets.
+  The stale removed-`answered` instruction is also corrected, matching PR #8.
+  Review commentary about figures not used in the final report still leaked
+  into limitations and made the outcome partial: B-191 records that separately.
+
+Validation: API agent suite, ruff lint/format and strict pyright pass; web eslint,
+typecheck and all 300 tests pass. A fresh development token was needed after
+API restarts during the walk. The live presentation prompt/report stays local.
+
+Tests cover the actual prompts and returned run view, including a report over
+the old character cap; re-entry preserving three cited results; and a returned
+chat message rendering four cards followed by two inline charts and source
+tables. Customer-specific runs, diagnostic SQL and presentation material remain
+under gitignored `.SampleData/`. No new dependencies, migrations or secrets.
+
+Plan/architecture: Phase 13, architecture Parts 4.2–4.5 and 4.8; no deviation.
+
+Owner follow-up: the visual style is now the default rather than a presentation
+prompt the reader must learn. Broad business questions select the full review;
+other answers use relevant visual blocks without forcing a dashboard onto a
+single fact. Explicit short/brief/one-sentence requests override the review at
+planning and composition. The composer leads with what happened in everyday
+English, groups direction and figure for emphasis, and keeps method detail out
+of the opening. The renderer also joins split Markdown such as `up **6.2%**`
+and `**Outlet A**, down **18.2%**` into coloured highlights, preserving the values
+and leaving code/links alone. This works on existing stored answers.
+
+The bounded catalog fallback from PR #8 is included here too, extended for
+broad performance questions even when wording found a weak hit. The live plain
+question originally matched only an unrelated card. Broad questions now keep
+their search hits and add a bounded overview, prioritising dated measure tables;
+the ordinary question reaches the monthly summary, outlet movement and daily
+series. This stays source-scoped and keeps the context budget/restrictions.
+Tests drive that ordinary question through the actual run and verify the short
+override and rendered directional highlights. The owner merged PR #8; PR #9
+is rebased onto that merge, preserving both sets of regression tests.
+
+Live follow-up verification: a plain business question (with currency, no layout
+instructions) reached the summary, outlet comparison and all daily rows, rendered
+four cards and both charts, and opened in simpler English with coloured change
+phrases. The composer still once labelled tax-and-fee-inclusive sales as net:
+B-192 records the missing deterministic metric/label binding. Guidance now keeps
+the source's sales label and two decimal places for average spend/unit prices.
+Existing B-190/B-191 accuracy/review limitations remain visible, not suppressed.
+An explicit short-answer follow-up returned one paragraph from one query, with
+no new cards/charts. Coloured changes were also verified on stored answers.
+Metric definition/reconciliation/review gaps remain B-190–B-192; formatting does
+not close them.
+
+
+## Merged bug fix — B-185 (PR #8, owner merged 2026-11-03)
 
 A period-only performance question could select no table cards, then refuse
 without executing any SQL and invent a data cutoff. When question and thread
@@ -20,7 +95,7 @@ credential, explaining why retrieval used only wording. No credential changed.
 Customer-specific diagnostic material stays under gitignored `.SampleData/`.
 
 Plan/architecture: Phase 13 reliability fix; architecture Parts 4.3, 4.5, 4.8,
-5.2. No design deviation. The owner merges the PR.
+5.2. No design deviation. The owner merged PR #8.
 
 Current position: **Phase 13 — the chat product. WP13.1a (#121), WP13.1b
                   (#122), WP13.2 (#123), WP13.3 (#124) and WP13.4 (#125)
