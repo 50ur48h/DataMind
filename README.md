@@ -1,61 +1,48 @@
-<div align="center">
-
 # DataMind
 
-### Ask a business question. Get a clear answer, the numbers behind it, and a way to check the work.
+### Your data and business analyst. A clearer plan for what to do next.
 
-[Local setup](#run-datamind-locally) · [How it works](#how-datamind-works) · [Technology](#technology) · [Project docs](#project-docs)
+[What you can do](#what-you-can-do) · [How it works](#how-datamind-works) · [Run it locally](#run-datamind-locally)
 
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-0F172A?style=flat-square&logo=tailwindcss&logoColor=38BDF8)
-![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Azure](https://img.shields.io/badge/Microsoft_Azure-0078D4?style=flat-square)
+It's Monday morning. You need to order stock, choose this week's promotion, and work out why sales slowed down. You have the records, but you still don't know where to start.
 
-</div>
+You could hire a data analyst. Or spend hours digging through your database, reports, and BI dashboards, trying to piece together an answer. Even then, you might have more charts than clarity.
 
-## What is DataMind?
+**Meet DataMind, your data and business analyst.** Ask a question in everyday English, and it investigates your data the way an analyst would: work out what matters, look for patterns, check the findings, and explain what they mean for your next decision.
 
-DataMind is a data analysis workspace for people who know their business but do not write database queries.
+> “What should I focus on this week to grow sales without buying stock I won't sell?”
 
-Connect a database, explain the business terms your team uses, and ask a question in normal English. DataMind finds the relevant data, plans an investigation, runs checked queries, and turns the results into an answer you can read and explore.
+It brings together your sales history, stock records, and knowledge base—the documents and business rules you share. With that information available, DataMind can help you explore which products need attention, where a promotion might help, and what to check before placing your next order. You can ask a follow-up, compare options, and see the evidence behind the suggestions.
 
-A sales total may tell you that the business grew. The useful next question is: **Did most stores improve, or did one strong store hide problems elsewhere?** DataMind can follow that question through the data, compare stores, look at changes over time, and show the evidence behind its conclusion.
+That could mean reviewing stock for a product that keeps selling out, considering an offer for a quiet weekday, or checking whether a popular discount brings customers back. The aim is to help you decide what to do next with the information your business already has.
 
-The work happens inside a purpose-built analysis system: a database catalog, business definitions, a research loop, controlled data access, evidence checks, and a visual reporting interface.
+**One shop, a growing company, or a team managing hundreds of locations:** you deserve a clear view of what is working and where to focus. And it goes beyond running a business—any team with connected data can use DataMind to investigate questions and make better-informed plans.
+
+It reads live data from your connected database when you ask. New records are available for the next investigation as they reach that database, so freshness follows your source. Suggestions depend on the information available; DataMind shows the supporting work and what is still missing.
 
 ## What you can do
 
-| | What it helps you do |
+| | Questions you can bring to DataMind |
 | --- | --- |
-| 🔎 **Investigate a change** | Start with a broad question, then look into the stores, dates, or channels that contributed to it. |
-| 📊 **Read a visual answer** | See plain English alongside KPI cards, comparison tables, bar charts, and trends. Compare multiple lines on the same chart, or switch back to the source table. |
-| 🧾 **Check the work** | Open the queries behind an answer, inspect the results, and see the method, limitations, and recorded model usage. |
-| 📖 **Use your business language** | Define what terms such as sales, refunds, or completed orders mean for your organization. Add documents that explain the business. |
-| 💬 **Keep asking** | Follow up in the same conversation: “Which stores drove that?” or “Does that still hold if we exclude cancelled orders?” |
-| 👥 **Work as a team** | Keep data sources, definitions, documents, and conversations within an organization, with Admin, Contributor, and Reader roles. |
+| 📦 **Plan your stock** | “Based on recent sales, what stock should I review before next week?” |
+| 🎯 **Explore promotions** | “Which products might suit a promotion, and what have past offers taught us?” |
+| 🌱 **Find room to grow** | “Where are we losing sales, and which opportunities should we look into first?” |
+| 👥 **Bring customers back** | “Do people return after their first offer, or do they only buy with a discount?” |
+| 💰 **Understand the money** | “Sales grew, but did we make more profit?” |
+| 📈 **See what changed** | “Which stores, products, or days explain the fall?” |
+| 📖 **Use what your team knows** | Share business rules, product information, and past campaign notes so the analysis has context. |
+| 💬 **Keep asking** | “Why?”, “What about weekends?”, “Show me the comparison.” Continue in the same chat. |
+| 🧾 **Check the answer** | See the figures, charts, and queries behind the explanation. |
 
-The answer format follows the question. A business review can include a summary, cards, charts, and next steps. Ask for a **short answer** when you only need the main point. Available metrics and chart detail depend on the connected data and the results returned.
+Each question needs the relevant data. Stock planning may need stock levels and supplier lead times; profit needs cost data; promotion ideas are stronger with past campaign results and business notes. DataMind helps you assess the options. You choose what to order, offer, or change.
 
-### Questions worth exploring
-
-These examples need the relevant data in your connected database:
-
-- “Are sales growing across most stores, or are a few stores carrying the rest?”
-- “Which stores are getting more orders but making less money per order?”
-- “Are discounts bringing in new customers, or mostly going to people who already buy from us?”
-- “Do customers come back after their first discounted order without needing another coupon?”
-- “When did these two stores start performing differently?”
+Answers can mix a short summary, key figures, tables, and charts. Ask for a **short answer** when you only need the main point.
 
 ## How DataMind works
 
 Before the first question, DataMind reads the database structure: tables, columns, and relationships. Column profiling adds information about the values they contain. Business definitions and uploaded documents add the meaning that table names alone cannot explain.
 
-For each question, the API runs a bounded investigation:
+For each question, DataMind works through an investigation:
 
 ```mermaid
 flowchart TD
@@ -81,63 +68,48 @@ flowchart TD
 
 These checks help catch mistakes; they do not guarantee that every query or business conclusion is correct. DataMind shows gaps and warnings so a polished report can still be questioned.
 
-### Where everything runs
+## How Meta models are used
 
-There are two application services:
+The setup below pairs two Meta models, each with a job in the investigation:
 
-- **`apps/web`** — the Next.js interface for chat, visual answers, evidence, and administration.
-- **`apps/api`** — the FastAPI service containing the analysis engine, catalog, connectors, permissions, and data access checks. The research loop runs inside this service.
+- **Muse Spark (`muse-spark-1.3`)** helps understand your question, review the answer, and explain the findings in simple language.
+- **Muse Wonder (`muse-wonder-1.0`)** handles planning the investigation, preparing queries, and working out what to check next as results come back.
 
-The platform's PostgreSQL database stores organizations, catalog information, definitions, conversations, runs, and events. Your connected business database stays separate and is queried through its connector. Query result files and encrypted connection credentials use local storage in development; Azure Blob Storage and Key Vault provide the deployment backends.
+The work is split into focused steps:
 
-Relevant schema information, document excerpts, and bounded query results are sent to the configured model provider during analysis. Running the app locally does not make model processing offline.
+| Step | What the model helps with |
+| --- | --- |
+| **Understand** | Work out the question, the time period, and the business measures involved. |
+| **Plan** | Decide which checks would help answer it. |
+| **Query** | Prepare queries using the tables and business rules supplied by DataMind. |
+| **Reflect** | Read the results and decide what needs checking next. |
+| **Review** | Look for gaps, conflicting findings, and conclusions that go beyond the evidence. |
+| **Explain** | Turn the findings into a clear answer with useful visuals. |
 
-## Technology
+These are separate calls with different jobs. DataMind assigns them to the configured model, so understanding a question, investigating it, and reviewing the answer each get their own instructions and context.
 
-This is the stack implemented in the repository. The Python and web lockfiles contain the full package lists.
+DataMind controls the database connection, permissions, query checks, and run limits. It gives the model relevant business context and returned results, and records the work behind the answer.
 
-| Area | Technologies | What they do |
-| --- | --- | --- |
-| 🖥️ **Web application** | Next.js 16, React 19, TypeScript | Application pages, chat, and the interactive interface. |
-| 🎨 **Design and interaction** | Tailwind CSS 4, Radix UI, Lucide, Motion, Sonner | Styling, accessible controls, icons, animation, and notifications. |
-| 📈 **Reports and tables** | Apache ECharts, TanStack Table, React Markdown, remark-gfm | Charts, sortable tables, formatted answers, and switching between charts and their data. |
-| 🔤 **Typography** | Inter, Source Serif 4, JetBrains Mono via Fontsource | Interface text, report text, and readable SQL. |
-| ⚙️ **API and validation** | Python 3.12, FastAPI, Uvicorn, Pydantic, pydantic-settings | HTTP endpoints, typed inputs and outputs, and configuration. |
-| 🗄️ **Platform storage** | PostgreSQL 16, SQLAlchemy, Alembic, asyncpg | Application records, database access, and migrations. PostgreSQL row-level security separates organization data. |
-| 🔌 **Business database connectors** | PostgreSQL / asyncpg; Microsoft SQL Server / pyodbc, unixODBC, Microsoft ODBC Driver 18 | Connect to supported business databases through a common interface. |
-| 🛡️ **SQL and credential protection** | SQLGlot, cryptography / Fernet, PyJWT | Parse and inspect SQL, encrypt local connection credentials, and validate sign-in tokens. |
-| 🧠 **Models and retrieval** | OpenAI and Meta Model API adapters, HTTPX, pgvector, PostgreSQL text search | Configurable models by task, provider fallback, and finding relevant context. Meaning-based search uses configured OpenAI embeddings; wording-based search is available without them. |
-| 📄 **Document processing** | pypdf, python-multipart | Read PDF text and receive document uploads. |
-| 🔐 **Identity** | Microsoft Entra ID, MSAL; local development token issuer | Deployed sign-in and a simpler local sign-in flow. |
-| ☁️ **Azure deployment** | Container Apps, Container Registry, Azure Database for PostgreSQL, Key Vault, Blob Storage, managed identities, Log Analytics, Bicep | Run the services, store images and results, protect credentials, collect logs, and define infrastructure as code. Azure SDKs provide identity, secrets, and storage access. |
-| 📡 **Live progress** | Server-Sent Events (SSE) | Stream stored run events to the browser while an answer is being prepared. |
-| 🧰 **Local tooling** | Docker Compose, uv, pnpm, GNU Make | Reproducible services, dependencies, and common project commands. |
-| 🧪 **Testing** | pytest, pytest-asyncio, Hypothesis, pytest-cov, Vitest, Testing Library, Playwright | API, policy, isolation, component, browser, and analysis evaluations. |
-| ✅ **Code and CI checks** | Ruff, Pyright, ESLint, TypeScript, GitHub Actions, Gitleaks, actionlint, ShellCheck | Formatting, static checks, secret scanning, workflow checks, and CI. |
+The app runs on your machine; model requests go to the Meta Model API. Relevant schema details, document excerpts, and query results may be included in those requests.
 
 ## Run DataMind locally
 
-The standard setup runs the web app, API, platform database, and sample database services with Docker Compose. You do not need an Azure account. You do need a model-provider API key for real answers.
+You will start the app, connect the included sample database, and ask your first question. You can try it even if you do not have your own business database.
 
-### 1. Install the prerequisites
+### Before you start
 
-| Tool | Required version or purpose |
-| --- | --- |
-| Git | Clone the repository. |
-| Docker with Compose v2 | Run the containers; start Docker Desktop first if you use it. |
-| uv and Python 3.12 | Manage the Python environment. `uv python install 3.12` installs Python. |
-| Node.js 22 and pnpm 10.30.3 | Run the web tools; pnpm is pinned in `apps/web/package.json`. |
-| GNU Make and a POSIX shell | Run the commands below. On Windows, use Git Bash. |
+Install these once:
 
-On Windows, GNU Make can be installed from PowerShell:
+- [Docker Desktop](https://docs.docker.com/get-started/get-docker/) — start it before running the app.
+- [Git](https://git-scm.com/downloads) and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+- [Node.js 22](https://nodejs.org/en/download) and [pnpm 10.30.3](https://pnpm.io/installation).
+- GNU Make. On Windows, run `winget install ezwinports.make` in PowerShell, then open a new **Git Bash** window for the commands below. On macOS or Linux, use a terminal with Make installed.
 
-```powershell
-winget install ezwinports.make
-```
+Create a [Meta Model API key](https://dev.meta.ai/) and enable API billing. Model calls use your Meta account and are billed by usage.
 
-After installation, open a new **Git Bash** window. Run the remaining commands from the repository root.
+### 1. Get the project
 
-### 2. Clone and prepare configuration
+Copy this into your terminal:
 
 ```bash
 git clone https://github.com/50ur48h/DataMind.git
@@ -145,62 +117,57 @@ cd DataMind
 uv python install 3.12
 make install
 make env
+```
+
+You now have the project, its dependencies, and a local settings file called `.env`.
+
+### 2. Add your Meta key
+
+Open `.env` in a text editor. Replace the matching settings with the block below, adding any that are missing. Replace `paste_your_meta_key_here` with your key:
+
+```dotenv
+META_API_KEY=paste_your_meta_key_here
+LLM_PROVIDERS=meta
+LLM_MODELS={"meta":{"small":"muse-spark-1.3","mid":"muse-spark-1.3","strong":"muse-wonder-1.0"}}
+LLM_PRICES={"muse-spark-1.3":{"input":1.25,"output":4.25},"muse-wonder-1.0":{"input":4.00,"output":20.00}}
+META_REASONING_EFFORT=minimal
+LLM_RUN_COST_LIMIT_USD=2.00
+EMBEDDINGS_MODEL=
+```
+
+This assigns Muse Spark to the lighter steps and Muse Wonder to the investigation, sets a per-question spending limit, and uses wording-based search to find relevant tables and documents. The price entries are USD per million tokens; check [Meta's pricing](https://dev.meta.ai/docs/pricing-rate-limits) if you change the model.
+
+Leave the other settings as they are for this first setup. Keep `.env` private.
+
+### 3. Create the key that protects saved connections
+
+Run:
+
+```bash
 make secrets.key
 ```
 
-`make env` creates `.env` from `.env.example` if it does not already exist. `make secrets.key` prints a new `LOCAL_SECRETS_KEY=...` line. Copy that line into `.env`, replacing its empty entry. Keep this key: it is needed to read the connection credentials you save locally.
+It prints a line beginning with `LOCAL_SECRETS_KEY=`. Copy the **whole line** into `.env`, replacing the empty line with that name. Save the file.
 
-Edit `.env` before starting the services:
+Keep this key unchanged after saving database connections. DataMind uses it to protect their passwords.
 
-| Setting | What to enter |
-| --- | --- |
-| `LOCAL_SECRETS_KEY` | The generated line from the previous command. |
-| `OPENAI_API_KEY` | Your provider key when using the default `LLM_PROVIDERS=openai`. Uncomment this setting. |
-| `LLM_MODELS` | A JSON mapping from provider and tier (`small`, `mid`, `strong`) to model IDs available to your account. Check the starting values in `.env.example`. |
-| `LLM_PRICES` | Prices for your configured models, including embeddings when enabled. Values are USD per million input/output tokens. |
-| `LLM_RUN_COST_LIMIT_USD` | Your maximum model spend per question; the template sets a limit. |
-
-Keep the template's local authentication settings: `ENV=local`, `AUTH_MODE=dev`, and `NEXT_PUBLIC_ENV=local`. No corporate sign-in setup is needed for this path.
-
-Model access and prices depend on the provider account. If you change a model ID, update its price entry too. With a spending limit set, unpriced models are refused by default. Never commit `.env` or provider keys.
-
-To use the **Meta Model API**, follow its configuration block in [.env.example](.env.example): set `META_API_KEY`, `LLM_PROVIDERS`, `LLM_MODELS`, and `LLM_PRICES`. Embeddings have separate settings; retrieval can use wording-based search without a working embedding configuration.
-
-### 3. Start the services and create the demo data
+### 4. Start DataMind
 
 ```bash
 make up
 make db.setup
 make seed
-make ps
 ```
 
-- `make up` builds and starts the containers.
-- `make db.setup` applies migrations as the schema owner, then enables the separate, restricted `dataagent_app` login used by the API.
-- `make seed` creates the generated pizza-chain dataset and its read-only database login. It rebuilds that demo dataset when rerun.
-- `make ps` shows container status.
+The first start may take a few minutes while Docker downloads and builds the services. These commands start the app, prepare its database, and create a sample restaurant dataset.
 
-The sample includes an intentional sales decline and missing item-level sales data, so you can try both an investigation and a question the data cannot answer.
+Open **[http://localhost:3000](http://localhost:3000)**. You should see the sign-in screen. Enter a name, continue, and create an organization.
 
-Default local addresses:
+### 5. Connect the sample data
 
-| Service | Address |
-| --- | --- |
-| Web app | [localhost:3000](http://localhost:3000) |
-| API health | [localhost:8000/healthz](http://localhost:8000/healthz) |
-| API reference | [localhost:8000/docs](http://localhost:8000/docs) |
-| Platform PostgreSQL | `localhost:5432` |
-| Pizza demo PostgreSQL | `localhost:6543` |
-| Optional F&B import database | `localhost:6544` |
+In the app, open **Settings → Data sources → Register a database** and enter:
 
-### 4. Sign in and connect the demo
-
-1. Open [localhost:3000](http://localhost:3000). Enter a name on the local sign-in screen and continue.
-2. Create an organization. Your account becomes its Admin.
-3. Open **Settings → Data sources**, then **Register a database**.
-4. Enter the connection details below and register it.
-
-| Field | Value |
+| Field | Enter |
 | --- | --- |
 | Name | `Pizza demo` |
 | Engine | PostgreSQL |
@@ -208,105 +175,61 @@ Default local addresses:
 | Port | `5432` |
 | Database | `pizza` |
 | Username | `pizza_readonly` |
-| Password | The `SEED_PIZZA_READONLY_PASSWORD` value in your `.env` |
+| Password | Copy `SEED_PIZZA_READONLY_PASSWORD` from your `.env` file. |
 
-Use `seed-pizza-pg`, because the API connects from inside Docker. The host address `localhost:6543` is for tools running on your computer.
+Keep the other connection options at their defaults. Register the database, then run these actions in order:
 
-Run **Test connection**, then **Refresh catalog**, then **Profile columns**. The connection test must confirm read-only access before discovery. The catalog gives DataMind the schema; profiling adds column statistics and sample information. If several databases are registered, choose the one to use in Settings.
+1. **Test connection** — checks that DataMind can connect with read-only access.
+2. **Refresh catalog** — reads the tables, columns, and relationships.
+3. **Profile columns** — adds information about the values in those columns.
 
-### 5. Ask your first question
+Choose **Answer questions from this** to use the sample database for your organization.
+
+### 6. Ask your first question
 
 Open a new chat and ask:
 
-> How has revenue changed over time, and which store contributed most to the recent decline?
+> “How have sales changed over time, and which store contributed most to the recent decline?”
 
-Watch the progress, read the answer, and open **How I worked this out** to inspect the supporting work. Try a follow-up:
+The sample data includes a sales decline for you to investigate. Open **How I worked this out** to see the supporting work. Then ask:
 
-> Is the decline coming from fewer orders or smaller orders?
+> “Was it fewer orders or smaller orders?”
 
-Then try:
+To try a question the sample cannot answer, ask:
 
-> Which individual menu items sold the most?
+> “Which individual menu items sold the most?”
 
-The included pizza fixture has no order-item table. DataMind should explain that missing link rather than report item sales.
+The sample has no order-item table, so DataMind should explain that the information needed for that answer is missing.
 
-### Connect your own database
+### Need help?
 
-The same registration flow supports PostgreSQL and Microsoft SQL Server. Supply a dedicated read-only login, test the connection, discover the catalog, and profile the columns. The database must be reachable from the API container; an external connection uses the configured TLS policy.
-
-Add your team's metric meanings under **Settings → Definitions** and supporting documents under **Knowledge**. These help DataMind interpret your business terms without repeating them in every question.
-
-For the optional SQL Server sample:
-
-```bash
-make up.mssql
-make seed.mssql
-```
-
-For a local SQLite sample that you want to load into PostgreSQL:
-
-```bash
-make seed.fnb SQLITE=path/to/your.sqlite
-```
-
-That command imports the file into the F&B sample service; it is not a live SQLite connector. Keep private source files and derived material under the gitignored `.SampleData/` directory. See [the detailed setup guide](docs/setup.md) for import and configuration details.
-
-## Everyday development
-
-| Command | Purpose |
+| If this happens… | Try this |
 | --- | --- |
-| `make help` | List available commands. |
-| `make logs` / `make ps` | Read service logs / check status. |
-| `make down` | Stop containers while keeping database volumes. |
-| `make install` | Install Python and web dependencies. |
-| `make api.dev` / `make web.dev` | Run the API / web app on the host instead of its container. Stop the corresponding container first to free its port. |
-| `make lint` / `make typecheck` | Run code and type checks. |
-| `make test` | Run the API and web test suites. |
-| `make evals` | Run analysis evaluations with the test model by default; live evaluations need explicit configuration. |
-| `make preflight` | Run broader local checks; its output lists the extra checks left to CI. |
-
-For host development, copy [the web template](apps/web/.env.example) to `apps/web/.env.local`. Set `NEXT_PUBLIC_API_URL` to your API address and add these local sign-in settings there:
-
-```dotenv
-NEXT_PUBLIC_ENV=local
-NEXT_PUBLIC_AUTH_MODE=dev
-```
-
-The host commands use ports 3000 and 8000 by default. The root `.env` supplies the API settings; Next.js needs its own `.env.local` when running outside Compose.
-
-### Common setup fixes
-
-| Symptom | What to check |
-| --- | --- |
-| A port is already in use | Change the relevant `*_PORT` in `.env`. Update host database URLs when changing database ports; update `NEXT_PUBLIC_API_URL`, `DEV_ISSUER_URL`, and `CORS_ORIGINS` when changing app ports. Docker service-to-service database ports stay at `5432`. |
-| Registering a source says the secrets key is missing | Add `LOCAL_SECRETS_KEY` to `.env`, then recreate the API with the command below. |
-| The API is running but questions fail | Check the provider key, model access, model IDs, prices, and API logs. A working health endpoint alone does not prove the model account is usable. |
-| The demo connection fails | Use `seed-pizza-pg:5432` from the containerized API, and confirm `make seed` completed. |
-| Analysis lacks context | Run the connection test, catalog refresh, and column profiling. Check that the organization has a selected source. |
-| Windows shows old code after an edit | File-change events can be missed across Docker bind mounts. Follow the cache-clearing and restart guidance in [AGENTS.md](AGENTS.md). |
-
-After changing API environment settings, **recreate** its container to load the new values:
+| The app will not open | Check that Docker Desktop is running. Run `make ps` to see service status, or `make logs` to read the logs. |
+| Questions fail | Check your Meta key, billing, and access to `muse-spark-1.3` and `muse-wonder-1.0`. The API logs can show the failure. |
+| The database will not connect | Use `seed-pizza-pg` as the host and `5432` as the port. Check that `make seed` finished. |
+| You changed `.env` but nothing changed | Recreate the API with the command below, then reload the browser. A restart alone keeps the old environment values. |
+| A port is already in use | See the port and environment settings in [.env.example](.env.example) and the [setup guide](docs/setup.md). |
 
 ```bash
 docker compose --env-file .env -f ops/docker-compose.yml up -d api
 ```
 
-A plain `restart` keeps the old container environment. Reload the browser after an API restart if local sign-in needs refreshing. Web environment changes also need the web container recreated; web dependency changes require rebuilding its image.
+Run `make down` to stop the app and keep your saved data. Run `make up` to start it again. Rerunning `make seed` rebuilds the sample dataset.
 
-## Project docs
+### Ready to use your own data?
 
-| Path | What to find there |
-| --- | --- |
-| [`apps/web`](apps/web) | Web application. |
-| [`apps/api`](apps/api) | API, research engine, catalog, connectors, and DAL. |
-| [`ops`](ops) | Local services, sample data scripts, and evaluations. |
-| [`infra`](infra) | Azure Bicep templates and environment parameters. |
-| [Architecture](docs/architecture.md) | Full system design and data boundaries. |
-| [Setup guide](docs/setup.md) | Additional setup, import, and model configuration details. |
-| [Current status](docs/plan/STATUS.md) | What is built and what is being worked on. |
-| [Backlog](docs/plan/BACKLOG.md) / [Decisions](docs/plan/DECISIONS.md) | Known gaps and reasons behind design choices. |
-| [Working agreement](AGENTS.md) | Development rules and platform-specific troubleshooting. |
+Register your PostgreSQL or Microsoft SQL Server database through the same screen, using a dedicated read-only login. It needs to be reachable from the API container. Then test the connection, refresh the catalog, and profile the columns.
 
-Changes go through pull requests into protected `main`; the project owner reviews and merges them.
+Add your team's definitions under **Settings → Definitions** and business documents under **Knowledge**. This helps DataMind understand the meaning behind your numbers.
+
+## For developers
+
+- [Architecture](docs/architecture.md) — system design and data boundaries.
+- [Setup guide](docs/setup.md) — extra configuration and data import options.
+- [Current status](docs/plan/STATUS.md) — current work and validation.
+- [Working agreement](AGENTS.md) — project rules and environment troubleshooting.
+
+The interface lives in `apps/web`; the API and analysis engine live in `apps/api`. `make help` lists the development and test commands.
 
 **License:** No license has been selected yet. All rights reserved.

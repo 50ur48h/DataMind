@@ -2,20 +2,28 @@
 
 ## Current work — Project README rewrite (B-194; 2026-11-03)
 
-Replaced the old README, including its intro media and shared demo sign-in
-details, with a plain-English product guide, architecture-based research flow,
-technology badges and stack table, and a complete local Compose setup. The
-setup uses an organization created by the reader and manual demo registration,
-so it does not rely on membership in the provisioner's machine-owned Demo org.
-It covers keys, model/pricing configuration, migrations, read-only discovery,
-profiling, a first investigation and an unanswerable item-level question, host
-development, and common setup failures. No application behavior changes.
+Owner approved this revision for a new PR after merging the first README in
+PR #11. Work is on `fix-readme-business-story`, based on fresh `origin/main`.
+The README opens with a Monday-morning stock, promotion and sales decision,
+then presents DataMind as a data and business analyst for owners and teams of
+different sizes. Examples connect sales history and business knowledge to stock
+reviews, promotion ideas, growth and customer retention, conditional on the
+relevant data. The existing How DataMind works explanation and
+diagram remain. Freshness is described as reading the connected source when a
+question runs, rather than promising continuously refreshing reports.
 
-Validation: setup targets checked with Make's dry run; repository links,
-environment names, service ports and dependency versions checked against source.
-No stack reset, demo reseed, or paid model calls were needed for this docs change.
-The host web template omits the explicit local auth settings: README supplies
-them, and B-195 tracks correcting the template itself. No architecture deviation.
+Removed the technology catalog and provider comparisons in favor of explaining
+Meta model roles. Local setup pairs Muse Spark 1.3 for intake, review and
+composition with Muse Wonder 1.0 for investigation, using copyable
+configuration, six short steps, an organization created by the reader, and a
+sample read-only source. No application or local environment settings changed.
+
+Validation: setup targets checked with Make's dry run; links, environment names,
+service ports and Meta configuration checked against source. Muse Spark/Wonder model
+availability, reasoning settings and Standard pricing checked against Meta's
+official docs. No stack
+reset, demo reseed, or paid model calls. B-195 still tracks the separate host web
+template issue; the README now focuses on Compose. No architecture deviation.
 
 ## Previous work — Comparison chart lines (B-193; merged PR #10)
 
