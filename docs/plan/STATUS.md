@@ -1,17 +1,5 @@
 # STATUS — DataMind build
 
-## Current work — Clearer organization onboarding (Phase 13; 2026-11-03)
-
-Onboarding shows a username without synthetic email/subject; full identity
-stays in Settings. Organization entries offer Set up linking directly to their
-settings. Owner requested removing the landing-page changes: the original
-welcome/sign-in screen is restored and no new public route remains.
-
-Validation: onboarding regressions cover the returned organization setup link
-and compact identity; existing Settings identity remains covered. No new
-dependencies or architecture deviation (Parts 6 and 10), no deferred work.
-
-## Current work — Project README rewrite (B-194; 2026-11-03)
 
 Owner approved this revision for a new PR after merging the first README in
 PR #11. Work is on `fix-readme-business-story`, based on fresh `origin/main`.

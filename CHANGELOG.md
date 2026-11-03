@@ -9,7 +9,9 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
-- Simplified onboarding identity and added a direct organization setup link.
+
+- Example settings now use Meta Muse Spark for every chat role, with embeddings
+  disabled so chat requires only a Meta API key.
 
 - README now opens with everyday business decisions and provides a simpler
   local setup using Meta Muse Spark and Muse Wonder.
