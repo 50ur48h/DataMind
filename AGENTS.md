@@ -3,7 +3,22 @@
 AI-native data analysis platform. Two deployables: `apps/web` (Next.js) and
 `apps/api` (FastAPI). Everything else is a library inside the API.
 
-MERGE_POLICY: AUTO       # ASK | AUTO — see docs/plan/implementation-plan.md §1.1
+MERGE_POLICY: ASK        # ASK | AUTO — see docs/plan/implementation-plan.md §1.1
+
+## Git workflow (every agent, every change)
+`main` is protected and only the owner merges into it, so any change can be
+rolled back by reverting its one squash commit.
+1. Start from a fresh `origin/main` on a new branch. Never commit or push to `main`.
+2. Push the branch and open a PR with `gh pr create`, filling in
+   `.github/pull_request_template.md`.
+3. Stop there. Do not run `gh pr merge`, enable auto-merge, or change branch
+   protection. The owner reviews and squash-merges.
+4. Commits and PRs carry no AI attribution: no `Co-authored-by` trailers and no
+   "Generated with …" lines. `.claude/settings.json` turns it off for Claude Code,
+   and `.githooks/commit-msg` strips it from any tool. Enable the hook once per
+   clone with `git config core.hooksPath .githooks`.
+
+To undo a merged change: `git revert <squash-sha>` on a new branch, then a PR.
 
 ## Read before working
 1. docs/plan/STATUS.md            — where we are (single source of truth)
