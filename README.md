@@ -209,7 +209,7 @@ The sample has no order-item table, so DataMind should explain that the informat
 | Questions fail | Check your Meta key, billing, and access to `muse-spark-1.3`. The API logs can show the failure. |
 | The database will not connect | Use `seed-pizza-pg` as the host and `5432` as the port. Check that `make seed` finished. |
 | You changed `.env` but nothing changed | Recreate the API with the command below, then reload the browser. A restart alone keeps the old environment values. |
-| A port is already in use | See the port and environment settings in [.env.example](.env.example) and the [setup guide](docs/setup.md). |
+| A port is already in use | See the port and environment settings in [.env.example](.env.example) and the local setup steps above. |
 
 ```bash
 docker compose --env-file .env -f ops/docker-compose.yml up -d api
@@ -226,8 +226,6 @@ Add your team's definitions under **Settings → Definitions** and business docu
 ## For developers
 
 - [Architecture](docs/architecture.md) — system design and data boundaries.
-- [Setup guide](docs/setup.md) — extra configuration and data import options.
-- [Current status](docs/plan/STATUS.md) — current work and validation.
 - [Working agreement](AGENTS.md) — project rules and environment troubleshooting.
 
 The interface lives in `apps/web`; the API and analysis engine live in `apps/api`. `make help` lists the development and test commands.

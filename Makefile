@@ -154,7 +154,7 @@ secrets.key: ## Print a fresh LOCAL_SECRETS_KEY line to paste into .env
 # implied, because a developer reading "safe to push" is entitled to know what
 # that sentence does not cover.
 .PHONY: preflight
-preflight: lint typecheck check.status check.backlog check.env check.todos check.roles check.truths check.preflight lint.workflows test test.rls test.dal test.web.e2e compile.web check.infra build.infra ## Every CI step that needs no stack or cloud session
+preflight: lint typecheck check.env check.todos check.roles check.truths check.preflight lint.workflows test test.rls test.dal test.web.e2e compile.web check.infra build.infra ## Every CI step that needs no stack or cloud session
 	@echo ""
 	@echo "Preflight clean — every CI step that runs without a stack, a registry"
 	@echo "or a cloud session. CI will additionally run, and this did not:"
@@ -185,16 +185,6 @@ lint.workflows: ## actionlint over every workflow, with shellcheck on each `run:
 	MSYS_NO_PATHCONV=1 docker run --rm -v "$(CURDIR):/repo" -w /repo \
 	  rhysd/actionlint:latest@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
 	  -color
-
-.PHONY: check.status
-check.status: ## Fail if STATUS.md lost its phase checklist or signed-off work
-	bash scripts/check_status.sh --selftest
-	bash scripts/check_status.sh
-
-.PHONY: check.backlog
-check.backlog: ## Fail if BACKLOG.md lost a row, an id, or its column shape
-	bash scripts/check_backlog.sh --selftest
-	bash scripts/check_backlog.sh
 
 .PHONY: check.env
 check.env: ## Fail if a documented variable reaches no container and nothing says why
