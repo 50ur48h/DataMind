@@ -9,6 +9,9 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+- Added a public landing page with an animated workflow, simpler onboarding
+  identity, and a direct organization setup link.
+
 - README now opens with everyday business decisions and provides a simpler
   local setup using Meta Muse Spark and Muse Wonder.
 

@@ -20,17 +20,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { createApi, type Me } from "@/lib/api-client";
-import { useSession } from "@/lib/auth/session";
 import { emailIsUnknown, personLabel } from "@/lib/identity";
+import { useSession } from "@/lib/auth/session";
 
 /**
  * Who is signed in: an avatar, the best name we have for them, and the subject
  * the product actually authorizes against.
  */
-export function Identity({ me }: { me: Me }) {
+export function Identity({ me, compact = false }: { me: Me; compact?: boolean }) {
   const name = me.name?.trim();
-  const primary = name || personLabel(me, me.subject);
-  const secondary = name && me.email ? me.email : null;
+  const primary = name || (compact ? me.email?.split("@")[0] || me.subject : personLabel(me, me.subject));
+  const secondary = !compact && name && me.email ? me.email : null;
 
   return (
     <div className="flex min-w-0 items-center gap-3.5">
@@ -43,15 +43,15 @@ export function Identity({ me }: { me: Me }) {
       <div className="grid min-w-0 gap-0.5">
         <p className="truncate text-[15px] font-semibold text-text">{primary}</p>
         {secondary && <p className="truncate text-[13px] text-muted-foreground">{secondary}</p>}
-        <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
+        {!compact && <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
           Subject
           <code className="truncate rounded-[6px] bg-surface-2 px-1.5 py-px text-[12px] text-text-2">
             {me.subject}
           </code>
-        </p>
+        </p>}
         {/* Said once, quietly: a missing email claim is a configuration fact,
             not a fault of the person reading it. */}
-        {emailIsUnknown(me) && (
+        {!compact && emailIsUnknown(me) && (
           <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
             Your sign-in did not include an email address, so we do not have one.
           </p>
@@ -130,7 +130,7 @@ export function Profile() {
       <Card tone="sunken" className="p-4 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {me ? (
-            <Identity me={me} />
+            <Identity me={me} compact />
           ) : (
             <div className="min-w-0 flex-1">
               <SkeletonList rows={1} avatar label="Loading your profile" />
@@ -169,8 +169,8 @@ export function Profile() {
                 </Badge>
                 {/* `/orgs/{id}` opens the organization: it redirects into its chat. */}
                 <Button asChild size="sm">
-                  <Link href={`/orgs/${membership.org_id}`} role="button">
-                    Members
+                  <Link href={`/orgs/${membership.org_id}/settings`} role="button">
+                    Set up
                   </Link>
                 </Button>
               </li>
