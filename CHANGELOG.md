@@ -12,6 +12,9 @@ under "Unreleased", only for changes a user would notice.
 - Simplified public documentation to the README and architecture; removed
   internal planning files and their document-preservation checks.
 
+- Normal startup no longer starts sample databases or requires seeding; setup
+  connects to an existing PostgreSQL server. Synthetic databases are test-only.
+
 - Example settings now use Meta Muse Spark for every chat role, with embeddings
   disabled so chat requires only a Meta API key.
 

@@ -32,11 +32,12 @@ services:
   # A stand-in for a *customer's* database. The platform reaches it read-only,
   # exactly as it will reach a real one. Deliberately has no order_items table.
   seed-pizza-pg:
+    profiles: ["test-fixtures"]
     image: postgres:16
     environment:
       POSTGRES_DB: ${SEED_PIZZA_DB:-pizza}
       POSTGRES_USER: ${SEED_PIZZA_USER:-pizza}
-      POSTGRES_PASSWORD: ${SEED_PIZZA_PASSWORD:?set SEED_PIZZA_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${SEED_PIZZA_PASSWORD:-local_fixture_only}
     ports:
       - "${SEED_PIZZA_PORT:-6543}:5432"
     volumes:
@@ -55,11 +56,12 @@ services:
   # bridge and map and meta tables, and eight tables that are empty because the
   # business does not collect that yet. `make seed.fnb` fills it.
   seed-fnb-pg:
+    profiles: ["test-fixtures"]
     image: postgres:16
     environment:
       POSTGRES_DB: ${SEED_FNB_DB:-fnb}
       POSTGRES_USER: ${SEED_FNB_USER:-fnb}
-      POSTGRES_PASSWORD: ${SEED_FNB_PASSWORD:?set SEED_FNB_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${SEED_FNB_PASSWORD:-local_fixture_only}
     ports:
       - "${SEED_FNB_PORT:-6544}:5432"
     volumes:
@@ -119,7 +121,7 @@ services:
       # serving no certificate that any name could match, so they are declared
       # local here — in the file that creates them — rather than in application
       # defaults that would follow the image into a deployment.
-      TLS_LOCAL_HOSTS: ${TLS_LOCAL_HOSTS:-seed-pizza-pg,seed-fnb-pg,mssql}
+      TLS_LOCAL_HOSTS: ${TLS_LOCAL_HOSTS:-}
       TLS_MODE: ${TLS_MODE:-require}
       TLS_MODE_LOCAL: ${TLS_MODE_LOCAL:-prefer}
       TLS_CA_FILE: ${TLS_CA_FILE:-}
@@ -190,10 +192,6 @@ services:
       - ../ops/artifacts:/app/ops/artifacts
     depends_on:
       platform-pg:
-        condition: service_healthy
-      seed-pizza-pg:
-        condition: service_healthy
-      seed-fnb-pg:
         condition: service_healthy
     healthcheck:
       test:

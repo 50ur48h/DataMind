@@ -69,10 +69,9 @@ test: test.api test.web                  ## Run all tests
 # ---------------------------------------------------------------------------
 .PHONY: up up.mssql down down.hard logs ps seed seed.mssql seed.fnb seed.definitions
 .PHONY: db.firewall.plan db.firewall.narrow
-up: .env ## Start the local stack (platform-pg, seed-pizza-pg, api, web)
+up: .env ## Start the app and platform database (no sample data)
 	$(COMPOSE) up -d --build
 	@printf '\n  web  http://localhost:3000\n  api  http://localhost:8000/healthz\n\n'
-	@printf 'Next: make seed\n'
 
 up.mssql: .env ## Start the SQL Server container on demand (Phase 3+)
 	$(COMPOSE) --profile mssql up -d mssql
@@ -321,3 +320,7 @@ evals.setup: .env ## The eval harness's org — HOST addresses, not usable in th
 .PHONY: demo.setup
 demo.setup: .env ## The browser's org — COMPOSE addresses, built inside the api container
 	$(SHELL) ops/scripts/demo_setup.sh
+
+.PHONY: test.fixtures.up
+test.fixtures.up: .env ## Start synthetic databases for tests only
+	$(COMPOSE) --profile test-fixtures up -d seed-pizza-pg seed-fnb-pg
