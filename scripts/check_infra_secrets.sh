@@ -73,7 +73,7 @@ selftest() {
   local passed=0 failed=0
   # **Global, not local.** The EXIT trap runs after this function has returned,
   # and under `set -u` a local would be unbound by then — which is exactly the
-  # note `check_status.sh` already carries about its own selftest. Written wrong
+  # principle used by the other guard self-tests. Written wrong
   # here first, and caught by the selftest passing five cases and then exiting 1.
   dir=$(mktemp -d)
   trap 'rm -rf "$dir"' EXIT

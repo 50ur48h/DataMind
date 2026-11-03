@@ -92,7 +92,7 @@ jobs:
         run: sh ops/scripts/check_role_definitions.sh --allowlist-only
       # **The workflows are the one kind of code here that nothing could run
       # before it ran in production** (**B-128**). `check_env.sh` has a
-      # `--selftest`, `check_status.sh` has one, the Python has pytest — and a
+      # `--selftest`, the Python has pytest — and a
       # `run:` block was first exercised by the dispatch it gated. That is how
       # `eval "value=${${$name}}"` reached main inside the step whose whole job is
       # to say whether the deployment has its values: the deploy died with
@@ -115,31 +115,7 @@ jobs:
       - name: Lint the workflows, with shellcheck over every `run:` block
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo             rhysd/actionlint:latest@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667             -color
-      # Runs before the check it tests, so a guard that has stopped catching
-      # anything fails loudly instead of passing everything (B-019).
-      - name: The STATUS guard still catches a gutted file
-        run: bash scripts/check_status.sh --selftest
-      - name: STATUS.md keeps its checklist and its signed-off work
-        env:
-          # On a PR, what the branch is proposing to change. On a push to main,
-          # the commit before it — comparing a ref with itself proves nothing.
-          STATUS_BASE_REF: >-
-            ${{ github.event_name == 'pull_request'
-                && format('origin/{0}', github.base_ref)
-                || 'HEAD^' }}
-        run: bash scripts/check_status.sh
-      # Same argument, same order, for the other file only a careful human reads
-      # (B-081). A row was silently merged into its neighbour and nothing noticed.
-      - name: The BACKLOG guard still catches a lost row
-        run: bash scripts/check_backlog.sh --selftest
-      - name: BACKLOG.md keeps every row it had
-        env:
-          BACKLOG_BASE_REF: >-
-            ${{ github.event_name == 'pull_request'
-                && format('origin/{0}', github.base_ref)
-                || 'HEAD^' }}
-        run: bash scripts/check_backlog.sh
-      # Third guard, same order and same argument (B-090). B-086 was a variable
+      # Check environment correspondence and the guard itself. B-086 was a variable
       # every developer had and no container was given, invisible for a whole
       # phase because the tests run where the variable was.
       - name: The environment guard still catches a variable that reaches nothing

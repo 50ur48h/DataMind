@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # Every TODO in source must carry a backlog ID -- TODO(B-123) -- so deferred work
-# is tracked in docs/plan/BACKLOG.md instead of rotting in a comment. FIXME, HACK
+# has a tracking reference instead of rotting in a comment. FIXME, HACK
 # and XXX are banned outright: file a backlog entry and write honest code.
-# Plan sections 1.5 and 4.3.
+# Existing B-### references are retained as historical tracking identifiers.
 
 set -euo pipefail
 
@@ -61,7 +61,7 @@ if [[ -n "$orphans" ]]; then
 fi
 
 if [[ -n "$banned" ]]; then
-  echo "Banned markers found (FIXME/HACK/XXX). Raise a BACKLOG.md entry instead."
+  echo "Banned markers found (FIXME/HACK/XXX). Record the follow-up in an issue or PR instead."
   echo "$banned"
   echo
   status=1
