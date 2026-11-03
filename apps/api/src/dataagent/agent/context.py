@@ -862,7 +862,10 @@ async def build_context(
         hits = await search(thread)
         from_thread = bool(hits)
     cards = tuple(TableCard.from_hit(hit) for hit in hits if hit.card_text)
-    if not cards and data_source_id is not None:
+    from dataagent.agent.reviews import business_question
+
+    broad = business_question(question)
+    if (not cards or broad) and data_source_id is not None:
         # Broad questions can name a period without naming a business measure.
         # A lexical miss is not evidence that the source cannot answer (B-185).
         # Offer a bounded overview, never the entire catalog, and do not claim
@@ -876,18 +879,28 @@ async def build_context(
         except NoCatalogError:
             pass
         else:
+            dated = {
+                (table.schema_name, table.table_name)
+                for table in catalog.tables
+                if any(
+                    "date" in column.data_type.lower() or "timestamp" in column.data_type.lower()
+                    for column in table.columns
+                )
+            }
             overview = sorted(
                 cards_from_catalog(data_source_id, catalog.tables),
                 key=lambda card: (
                     not offers_measures(card.card_text),
+                    (card.schema_name, card.table_name) not in dated,
                     card.schema_name,
                     card.table_name,
                 ),
             )
-            cards = tuple(
-                replace(card, found_by="catalog_fallback")
-                for card in overview[: max(1, min(limit, MAX_LIMIT))]
-            )
+            extras = tuple(replace(card, found_by="catalog_fallback") for card in overview)
+            merged = {card.qualified: card for card in (*cards, *extras)}
+            # Keep search provenance for actual hits, and the same total cap.
+            merged.update({card.qualified: card for card in cards})
+            cards = tuple(merged.values())[: max(1, min(limit, MAX_LIMIT))]
     restrictions = await _restrictions_for(org_id, cards)
     bundle = ContextBundle(
         question=question,
@@ -903,7 +916,8 @@ async def build_context(
     )
     if any(card.found_by == "catalog_fallback" for card in cards):
         bundle = bundle.with_capability_note(
-            "The question's words matched no table cards. The reference cards are a "
+            ("This is a broad performance question. " if broad else "The search matched no cards. ")
+            + "The reference cards include a "
             "bounded catalog overview, with tables offering measures first, not relevance "
             "matches. Decide from their contents whether they can answer the question; "
             "an unsuccessful search does not establish that data is missing."

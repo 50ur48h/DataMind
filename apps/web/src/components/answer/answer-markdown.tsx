@@ -78,6 +78,21 @@ const HIGHLIGHT = new RegExp(
 
 /** Nodes whose text is not prose to highlight: a bold phrase decides for itself. */
 const SKIP = new Set(["strong", "emphasis", "link", "heading", "inlineCode", "code", "highlight"]);
+const DIRECTION_END = new RegExp(`\\b${DIRECTION}(?:\\s+by)?\\s*$`, "i");
+const ONLY_AMOUNT = new RegExp(`^${AMOUNT}$`, "i");
+
+function plainOf(node: MdastNode): string {
+  return node.value ?? (node.children ?? []).map(plainOf).join("");
+}
+
+function highlighted(value: string): MdastNode {
+  const tone = markTone(value);
+  return {
+    type: "highlight",
+    data: { hName: "mark", hProperties: tone ? { className: [tone] } : {} },
+    children: [{ type: "text", value }],
+  };
+}
 
 function remarkHighlight() {
   const split = (value: string): MdastNode[] => {
@@ -91,11 +106,7 @@ function remarkHighlight() {
       // An implicit highlight needs a direction; an explicit one does not.
       if (explicit === undefined && !tone) continue;
       if (match.index > last) parts.push({ type: "text", value: value.slice(last, match.index) });
-      parts.push({
-        type: "highlight",
-        data: { hName: "mark", hProperties: tone ? { className: [tone] } : {} },
-        children: [{ type: "text", value: inner }],
-      });
+      parts.push(highlighted(inner));
       last = match.index + match[0].length;
     }
     if (parts.length === 0) return [{ type: "text", value }];
@@ -105,7 +116,24 @@ function remarkHighlight() {
   const walk = (node: MdastNode) => {
     if (!node.children || SKIP.has(node.type)) return;
     const next: MdastNode[] = [];
-    for (const child of node.children) {
+    for (let index = 0; index < node.children.length; index++) {
+      const child = node.children[index]!;
+      const following = node.children[index + 1];
+      // Markdown often separates the direction from its bold number. Read the
+      // two adjacent inline nodes together, without touching links or code.
+      const direction = child.type === "text" ? DIRECTION_END.exec(child.value ?? "") : null;
+      if (direction && following?.type === "strong" && ONLY_AMOUNT.test(plainOf(following))) {
+        const prefix = child.value!.slice(0, direction.index);
+        let phrase = direction[0] + plainOf(following);
+        const previous = next[next.length - 1];
+        if (prefix.trim() === "," && previous?.type === "strong" && !looksNumeric(plainOf(previous))) {
+          next.pop();
+          phrase = plainOf(previous) + prefix + phrase;
+        } else if (prefix) next.push(...split(prefix));
+        next.push(highlighted(phrase));
+        index++;
+        continue;
+      }
       if (child.type === "text" && child.value) next.push(...split(child.value));
       else {
         walk(child);

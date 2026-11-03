@@ -931,6 +931,18 @@ describe("how far through its allowance a run is", () => {
 });
 
 describe("how an answer is rendered", () => {
+  it("highlights whole directional phrases even when Markdown splits the bold number", async () => {
+    const words = "Sales are up **6.2%** at **$1.42M**. **Outlet A**, down **18.2%**, needs a look. Use `down 9%` as code.";
+    routeFetch({run: {...ANSWERED, answer: words}, messages: [MESSAGES[0], {...MESSAGES[1], content: words}]});
+    render(<ConversationThread orgId="o1" conversationId="c1" />);
+    const answer = await screen.findByTestId("answer-text");
+    expect(answer.querySelector("mark.up")?.textContent).toBe("up 6.2%");
+    expect(answer.querySelector("mark.down")?.textContent).toBe("Outlet A, down 18.2%");
+    expect(answer.querySelector("strong")?.textContent).toBe("$1.42M");
+    expect(answer.querySelector("code")?.textContent).toBe("down 9%");
+    expect(answer.querySelector("code mark")).toBeNull();
+  });
+
   it("renders a business review from the returned message as four cards and interleaved charts", async () => {
     const markdown = [
       "Sales grew, with one outlet needing attention.",

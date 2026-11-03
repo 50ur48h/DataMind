@@ -31,7 +31,7 @@ not a second answer schema or a hard-coded demo.
   into limitations and made the outcome partial: B-191 records that separately.
 
 Validation: API agent suite, ruff lint/format and strict pyright pass; web eslint,
-typecheck and all 299 tests pass. A fresh development token was needed after
+typecheck and all 300 tests pass. A fresh development token was needed after
 API restarts during the walk. The live presentation prompt/report stays local.
 
 Tests cover the actual prompts and returned run view, including a report over
@@ -41,6 +41,39 @@ tables. Customer-specific runs, diagnostic SQL and presentation material remain
 under gitignored `.SampleData/`. No new dependencies, migrations or secrets.
 
 Plan/architecture: Phase 13, architecture Parts 4.2–4.5 and 4.8; no deviation.
+
+Owner follow-up: the visual style is now the default rather than a presentation
+prompt the reader must learn. Broad business questions select the full review;
+other answers use relevant visual blocks without forcing a dashboard onto a
+single fact. Explicit short/brief/one-sentence requests override the review at
+planning and composition. The composer leads with what happened in everyday
+English, groups direction and figure for emphasis, and keeps method detail out
+of the opening. The renderer also joins split Markdown such as `up **6.2%**`
+and `**Outlet A**, down **18.2%**` into coloured highlights, preserving the values
+and leaving code/links alone. This works on existing stored answers.
+
+The bounded catalog fallback from PR #8 is included here too, extended for
+broad performance questions even when wording found a weak hit. The live plain
+question originally matched only an unrelated card. Broad questions now keep
+their search hits and add a bounded overview, prioritising dated measure tables;
+the ordinary question reaches the monthly summary, outlet movement and daily
+series. This stays source-scoped and keeps the context budget/restrictions.
+Tests drive that ordinary question through the actual run and verify the short
+override and rendered directional highlights. PR #8 remains separate; no merge
+is performed by the agent.
+
+Live follow-up verification: a plain business question (with currency, no layout
+instructions) reached the summary, outlet comparison and all daily rows, rendered
+four cards and both charts, and opened in simpler English with coloured change
+phrases. The composer still once labelled tax-and-fee-inclusive sales as net:
+B-192 records the missing deterministic metric/label binding. Guidance now keeps
+the source's sales label and two decimal places for average spend/unit prices.
+Existing B-190/B-191 accuracy/review limitations remain visible, not suppressed.
+An explicit short-answer follow-up returned one paragraph from one query, with
+no new cards/charts. Coloured changes were also verified on stored answers.
+Metric definition/reconciliation/review gaps remain B-190–B-192; formatting does
+not close them.
+
 
 ## Current bug fix — B-185 (2026-11-03, pending owner review)
 

@@ -905,10 +905,20 @@ async def _compose(
         + READABLE_ANSWER_RULE
         + PARTIAL_RESULT_RULE
     )
-    from dataagent.agent.reviews import REVIEW_DISPLAY, review_requested
+    from dataagent.agent.reviews import (
+        BRIEF_DISPLAY,
+        REVIEW_DISPLAY,
+        VISUAL_DISPLAY,
+        brief_requested,
+        review_requested,
+    )
 
-    if review_requested(state.question):
-        prompt += f"\n\n{REVIEW_DISPLAY}"
+    if brief_requested(state.question):
+        prompt += f"\n\n{BRIEF_DISPLAY}"
+    else:
+        prompt += f"\n\n{VISUAL_DISPLAY}"
+        if review_requested(state.question):
+            prompt += f"\n\n{REVIEW_DISPLAY}"
     completion = await llm.complete(
         role="compose",
         org_id=context.org_id,
@@ -1028,13 +1038,26 @@ READABLE_ANSWER_RULE = (
     "should not need a second reading to learn what to do next.\n"
     "Being simple is not being vague: keep every number, every name and every "
     "limit exactly as the evidence gives them.\n\n"
+    "Sound like a helpful colleague talking to the owner. Use short, natural "
+    "sentences and familiar words: 'people spent less per order' rather than "
+    "'weighted average order value declined'; 'restaurants open in both months' "
+    "rather than 'comparable outlet population'; 'we do not know why yet' rather "
+    "than 'the evidence does not establish causality'. Explain what a change "
+    "means before describing the method. Keep definitions and caveats accurate "
+    "but brief; do not turn the answer into an audit report.\n"
+    "Highlight only the few changes that matter. Keep direction and figure "
+    "together, for example **up 6.2%** or **Outlet A, down 18.2%**, so the screen "
+    "can highlight the complete phrase. Do not bold a percentage on its own "
+    "while leaving 'up' or 'down' outside it. Use ==a key point== sparingly for "
+    "neutral emphasis. Keep plain totals bold, not every sentence highlighted.\n\n"
     # **B-179.** The owner met `310817.08999999997` in a table of monthly sales.
     # `encodable` now trims the representation error before the model sees it,
     # so this is about the other half: a number a person reads should be written
     # the way money is written.
     "Write money in the requested or evidenced currency, for example **USD 310,817**, "
     "with thousands separated and rounded to whole units unless the figure is "
-    "under 100. Do not guess a currency or convert amounts without evidence. Write weights "
+    "under 100. Do not guess a currency or convert amounts without evidence. "
+    "Keep average spend per order and unit prices to two decimal places. Write weights "
     "as **1,973 kg**. Never print more decimal places than the number deserves; "
     "a total to eleven decimals is noise wearing the clothes of precision. Do "
     "not invent precision the evidence does not have either — if a figure is "
