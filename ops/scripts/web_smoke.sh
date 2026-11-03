@@ -82,6 +82,7 @@ fi
 # ---------------------------------------------------------------------------
 export LOCAL_SECRETS_KEY
 export SECRETS_BACKEND=local
+export TLS_LOCAL_HOSTS=seed-pizza-pg,seed-fnb-pg
 
 #: A stub in the ordinary image, selected by environment and refused at boot in
 #: production twice over (config.assert_llm_providers_are_production_safe, and
@@ -133,7 +134,7 @@ export SEED_FNB_PORT=$SMOKE_FNB_PORT
 
 # The smoke overlay replaces the two host bind mounts with named volumes; see
 # ops/docker-compose.smoke.yml for what that is worth and what it cost to learn.
-COMPOSE="docker compose -p $PROJECT --env-file .env -f ops/docker-compose.yml -f ops/docker-compose.smoke.yml"
+COMPOSE="docker compose --profile test-fixtures -p $PROJECT --env-file .env -f ops/docker-compose.yml -f ops/docker-compose.smoke.yml"
 
 teardown() {
   if [ "${SMOKE_KEEP:-}" = "1" ]; then
@@ -143,7 +144,7 @@ teardown() {
     # `${PLATFORM_DB_PASSWORD:?...}` for every service in the file before it
     # will do anything at all, including stopping things.
     echo "Take it down with:"
-    echo "  docker compose -p $PROJECT --env-file .env -f ops/docker-compose.yml -f ops/docker-compose.smoke.yml down --volumes"
+    echo "  docker compose --profile test-fixtures -p $PROJECT --env-file .env -f ops/docker-compose.yml -f ops/docker-compose.smoke.yml down --volumes"
     return
   fi
   echo

@@ -94,7 +94,7 @@ The app runs on your machine; model requests go to the Meta Model API. Relevant 
 
 ## Run DataMind locally
 
-You will start the app, connect the included sample database, and ask your first question. You can try it even if you do not have your own business database.
+You will start the app, connect your PostgreSQL server with a read-only login, and ask your first question. No demo database or seeding is needed.
 
 ### Before you start
 
@@ -156,50 +156,28 @@ Keep this key unchanged after saving database connections. DataMind uses it to p
 ```bash
 make up
 make db.setup
-make seed
 ```
 
-The first start may take a few minutes while Docker downloads and builds the services. These commands start the app, prepare its database, and create a sample restaurant dataset.
+The first start may take a few minutes while Docker downloads and builds the services. These commands start the app and prepare its own platform database. Your business data stays on your PostgreSQL server.
 
 Open **[http://localhost:3000](http://localhost:3000)**. You should see the sign-in screen. Enter a name, continue, and create an organization.
 
-### 5. Connect the sample data
+### 5. Connect your PostgreSQL server
 
-In the app, open **Settings → Data sources → Register a database** and enter:
+Open **Settings → Data sources → Register a database**. Enter your server's host,
+port, database name, and a dedicated read-only username and password. Use the
+appropriate TLS settings for that server. The API container must be able to
+reach it; localhost inside that container refers to the API itself.
 
-| Field | Enter |
-| --- | --- |
-| Name | `Pizza demo` |
-| Engine | PostgreSQL |
-| Host | `seed-pizza-pg` |
-| Port | `5432` |
-| Database | `pizza` |
-| Username | `pizza_readonly` |
-| Password | Copy `SEED_PIZZA_READONLY_PASSWORD` from your `.env` file. |
-
-Keep the other connection options at their defaults. Register the database, then run these actions in order:
-
-1. **Test connection** — checks that DataMind can connect with read-only access.
-2. **Refresh catalog** — reads the tables, columns, and relationships.
-3. **Profile columns** — adds information about the values in those columns.
-
-Choose **Answer questions from this** to use the sample database for your organization.
+Run **Test connection**, **Refresh catalog**, then **Profile columns**. Choose
+**Answer questions from this** to select the source for your organization.
 
 ### 6. Ask your first question
 
-Open a new chat and ask:
+> “How are sales changing, and where should I focus first?”
 
-> “How have sales changed over time, and which store contributed most to the recent decline?”
-
-The sample data includes a sales decline for you to investigate. Open **How I worked this out** to see the supporting work. Then ask:
-
-> “Was it fewer orders or smaller orders?”
-
-To try a question the sample cannot answer, ask:
-
-> “Which individual menu items sold the most?”
-
-The sample has no order-item table, so DataMind should explain that the information needed for that answer is missing.
+Use a question relevant to your data. Open **How I worked this out** to inspect
+the evidence and ask follow-up questions in the same chat.
 
 ### Need help?
 
@@ -207,7 +185,7 @@ The sample has no order-item table, so DataMind should explain that the informat
 | --- | --- |
 | The app will not open | Check that Docker Desktop is running. Run `make ps` to see service status, or `make logs` to read the logs. |
 | Questions fail | Check your Meta key, billing, and access to `muse-spark-1.3`. The API logs can show the failure. |
-| The database will not connect | Use `seed-pizza-pg` as the host and `5432` as the port. Check that `make seed` finished. |
+| The database will not connect | Check the server hostname, port, TLS settings and read-only credentials. Verify the server is reachable from the API container. |
 | You changed `.env` but nothing changed | Recreate the API with the command below, then reload the browser. A restart alone keeps the old environment values. |
 | A port is already in use | See the port and environment settings in [.env.example](.env.example) and the local setup steps above. |
 
@@ -215,7 +193,7 @@ The sample has no order-item table, so DataMind should explain that the informat
 docker compose --env-file .env -f ops/docker-compose.yml up -d api
 ```
 
-Run `make down` to stop the app and keep your saved data. Run `make up` to start it again. Rerunning `make seed` rebuilds the sample dataset.
+Run `make down` to stop the app and keep your saved data. Run `make up` to start it again.
 
 ### Ready to use your own data?
 
