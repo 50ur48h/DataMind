@@ -59,8 +59,8 @@ their search hits and add a bounded overview, prioritising dated measure tables;
 the ordinary question reaches the monthly summary, outlet movement and daily
 series. This stays source-scoped and keeps the context budget/restrictions.
 Tests drive that ordinary question through the actual run and verify the short
-override and rendered directional highlights. PR #8 remains separate; no merge
-is performed by the agent.
+override and rendered directional highlights. The owner merged PR #8; PR #9
+is rebased onto that merge, preserving both sets of regression tests.
 
 Live follow-up verification: a plain business question (with currency, no layout
 instructions) reached the summary, outlet comparison and all daily rows, rendered
@@ -75,7 +75,7 @@ Metric definition/reconciliation/review gaps remain B-190–B-192; formatting do
 not close them.
 
 
-## Current bug fix — B-185 (2026-11-03, pending owner review)
+## Merged bug fix — B-185 (PR #8, owner merged 2026-11-03)
 
 A period-only performance question could select no table cards, then refuse
 without executing any SQL and invent a data cutoff. When question and thread
@@ -95,7 +95,7 @@ credential, explaining why retrieval used only wording. No credential changed.
 Customer-specific diagnostic material stays under gitignored `.SampleData/`.
 
 Plan/architecture: Phase 13 reliability fix; architecture Parts 4.3, 4.5, 4.8,
-5.2. No design deviation. The owner merges the PR.
+5.2. No design deviation. The owner merged PR #8.
 
 Current position: **Phase 13 — the chat product. WP13.1a (#121), WP13.1b
                   (#122), WP13.2 (#123), WP13.3 (#124) and WP13.4 (#125)
