@@ -70,10 +70,10 @@ These checks help catch mistakes; they do not guarantee that every query or busi
 
 ## How Meta models are used
 
-The setup below pairs two Meta models, each with a job in the investigation:
+DataMind supports Meta models through the Meta Model API. The setup below uses Muse Spark for every step, matching the working Railway configuration:
 
-- **Muse Spark (`muse-spark-1.3`)** helps understand your question, review the answer, and explain the findings in simple language.
-- **Muse Wonder (`muse-wonder-1.0`)** handles planning the investigation, preparing queries, and working out what to check next as results come back.
+- **Muse Spark (`muse-spark-1.3`)** handles the full investigation: understanding your question, planning checks, preparing queries, reviewing results, and explaining the findings.
+- **Muse Wonder (`muse-wonder-1.0`)** is an optional model for investigation tasks when your Meta account has access. Confirm that access before changing the model and its price settings.
 
 The work is split into focused steps:
 
@@ -128,14 +128,14 @@ Open `.env` in a text editor. Replace the matching settings with the block below
 ```dotenv
 META_API_KEY=paste_your_meta_key_here
 LLM_PROVIDERS=meta
-LLM_MODELS={"meta":{"small":"muse-spark-1.3","mid":"muse-spark-1.3","strong":"muse-wonder-1.0"}}
-LLM_PRICES={"muse-spark-1.3":{"input":1.25,"output":4.25},"muse-wonder-1.0":{"input":4.00,"output":20.00}}
+LLM_MODELS={"meta":{"small":"muse-spark-1.3","mid":"muse-spark-1.3","strong":"muse-spark-1.3"}}
+LLM_PRICES={"muse-spark-1.3":{"input":1.25,"output":4.25}}
 META_REASONING_EFFORT=minimal
 LLM_RUN_COST_LIMIT_USD=2.00
 EMBEDDINGS_MODEL=
 ```
 
-This assigns Muse Spark to the lighter steps and Muse Wonder to the investigation, sets a per-question spending limit, and uses wording-based search to find relevant tables and documents. The price entries are USD per million tokens; check [Meta's pricing](https://dev.meta.ai/docs/pricing-rate-limits) if you change the model.
+This uses Muse Spark for every analysis step, sets a per-question spending limit, and uses wording-based search to find relevant tables and documents. The price entries are USD per million tokens; check [Meta's pricing](https://dev.meta.ai/docs/pricing-rate-limits) if you change the model.
 
 Leave the other settings as they are for this first setup. Keep `.env` private.
 
@@ -206,7 +206,7 @@ The sample has no order-item table, so DataMind should explain that the informat
 | If this happens… | Try this |
 | --- | --- |
 | The app will not open | Check that Docker Desktop is running. Run `make ps` to see service status, or `make logs` to read the logs. |
-| Questions fail | Check your Meta key, billing, and access to `muse-spark-1.3` and `muse-wonder-1.0`. The API logs can show the failure. |
+| Questions fail | Check your Meta key, billing, and access to `muse-spark-1.3`. The API logs can show the failure. |
 | The database will not connect | Use `seed-pizza-pg` as the host and `5432` as the port. Check that `make seed` finished. |
 | You changed `.env` but nothing changed | Recreate the API with the command below, then reload the browser. A restart alone keeps the old environment values. |
 | A port is already in use | See the port and environment settings in [.env.example](.env.example) and the [setup guide](docs/setup.md). |
