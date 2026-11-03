@@ -2,9 +2,11 @@
 
 ## Current work — Meta-only example environment (B-196; 2026-11-03)
 
-The example now selects Meta, routes small/mid tasks to Muse Spark 1.3 and
-strong tasks to Muse Wonder 1.0, includes both prices and an explicit reasoning
-setting, and leaves embeddings disabled. The only active provider-key setting
+The example now selects Meta with Muse Spark 1.3 for every chat role, its price
+entry and explicit minimal reasoning, and leaves embeddings disabled. The owner
+confirmed Spark works on Railway while Wonder returned model_not_found for the
+deployed key. README setup now matches Spark-only defaults; Wonder remains an
+optional model requiring confirmed account access. The only active provider-key setting
 is META_API_KEY. Optional legacy keys remain commented compatibility labels,
 required by check_env because the unchanged application still supports them.
 No application code, Compose services, or real .env credentials were changed.
