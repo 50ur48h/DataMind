@@ -15,6 +15,11 @@ under "Unreleased", only for changes a user would notice.
   number cards and highlighted changes, with the query behind every number one
   click away.
 
+### Fixed
+- Longer answers no longer fail with "did not produce valid FinalizeIn": the
+  step that writes the answer had only 1024 tokens to do it in and was cut off
+  mid-sentence. It now has room for 4096.
+
 ### Security
 - Every query the platform runs against a customer's database is checked before
   it is sent: one statement, read-only, no system schemas, and every table and
