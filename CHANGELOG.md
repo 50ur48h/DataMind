@@ -9,6 +9,9 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+- README now opens with everyday business decisions and provides a simpler
+  local setup using Meta Muse Spark and Muse Wonder.
+
 - Rewrote the project README with a plain-English product guide, architecture
   walkthrough, technology stack, and local setup from configuration to first answer.
 
