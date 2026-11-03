@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import Home from "./page";
 import { Identity, Profile } from "@/components/screens/profile";
 import type { Me } from "@/lib/api-client";
 
@@ -11,17 +10,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock("@/lib/auth/session", () => ({ useSession: () => ({ who: null, getToken: token }) }));
 vi.mock("@/components/screens/sign-in", () => ({ SignIn: () => <button>Continue to sign in</button> }));
 
-describe("the public front door", () => {
-  it("reaches the landing explanation and sign-in from the home route", () => {
-    render(<Home />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Your numbers have a story");
-    expect(screen.getByRole("link", { name: /Get started/ })).toHaveAttribute("href", "#start");
-    expect(screen.getByRole("button", { name: "Continue to sign in" })).toBeInTheDocument();
-    for (const stage of ["Your data", "Your business", "An investigation", "Checked evidence", "A clearer next step"]) {
-      expect(screen.getByRole("heading", { name: stage })).toBeInTheDocument();
-    }
-  });
-
+describe("organization onboarding", () => {
   it("links an organization directly to setup", async () => {
     render(<Profile />);
     expect(await screen.findByRole("button", { name: "Set up" })).toHaveAttribute("href", "/orgs/org-1/settings");

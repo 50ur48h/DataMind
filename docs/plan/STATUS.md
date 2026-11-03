@@ -1,20 +1,15 @@
 # STATUS — DataMind build
 
-## Current work — Landing page and onboarding (Phase 13; 2026-11-03)
+## Current work — Clearer organization onboarding (Phase 13; 2026-11-03)
 
-Added public /welcome and signed-out home landing with product copy, sign-in
-and five animated investigation stages. Uses existing Calm tokens and icons,
-mobile stacking and reduced-motion support; no new dependencies. Signed-in
-home routing remains intact. Onboarding shows a username without synthetic
-email/subject; full identity stays in Settings. Organization cards now offer
-Set up linking directly to their settings.
+Onboarding shows a username without synthetic email/subject; full identity
+stays in Settings. Organization entries offer Set up linking directly to their
+settings. Owner requested removing the landing-page changes: the original
+welcome/sign-in screen is restored and no new public route remains.
 
-Validation: live /welcome browser preview; home-route regression reaches the
-landing and sign-in; compact identity regression hides email/subject. Web lint
-and typecheck pass; full web suite passed 305 tests in 20 files, then the
-additional organization-setup regression passed in the three-test front-door
-suite. Browser preview saved locally under ignored .SampleData/. No architecture deviation (Parts
-6 and 10); no new deferred work.
+Validation: onboarding regressions cover the returned organization setup link
+and compact identity; existing Settings identity remains covered. No new
+dependencies or architecture deviation (Parts 6 and 10), no deferred work.
 
 ## Current work — Project README rewrite (B-194; 2026-11-03)
 

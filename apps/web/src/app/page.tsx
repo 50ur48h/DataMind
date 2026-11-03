@@ -32,7 +32,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ApiHealth } from "@/components/api-health";
 import { EntryBrand, EntryFrame } from "@/components/screens/entry-frame";
 import { Profile } from "@/components/screens/profile";
-import { Landing } from "@/components/screens/landing";
+import { SignIn } from "@/components/screens/sign-in";
 import { createApi } from "@/lib/api-client";
 import { useSession } from "@/lib/auth/session";
 
@@ -86,5 +86,13 @@ export default function Home() {
     );
   }
 
-  return <Landing />;
+  return (
+    <EntryFrame footer={<ApiHealth />}>
+      <EntryBrand heading>
+        <span className="sm:block">Ask your business data a question in plain English.</span>{" "}
+        <span className="sm:block">Get an answer you can check.</span>
+      </EntryBrand>
+      <SignIn />
+    </EntryFrame>
+  );
 }
