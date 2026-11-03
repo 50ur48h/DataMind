@@ -82,7 +82,7 @@ from dataagent.agent.coverage import (
     period_of_values,
 )
 from dataagent.agent.critic import CriticVerdict, stated_range
-from dataagent.agent.loop import LoopOutcome, research
+from dataagent.agent.loop import COMPOSE_PREVIEWS, LoopOutcome, research
 from dataagent.agent.provenance import modes_of
 from dataagent.agent.provenance import reorder as provenance_order
 from dataagent.agent.state import ResearchState, StateFinding
@@ -632,6 +632,7 @@ async def _investigate(
             save=save,
             keep=keep,
             verdict=verdict,
+            previous=outcome,
             settings=settings,
         )
 
@@ -748,6 +749,7 @@ async def _second_pass(
     save: Callable[[], Awaitable[None]],
     keep: Callable[[StateFinding], Awaitable[None]],
     verdict: CriticVerdict,
+    previous: LoopOutcome,
     settings: Settings | None,
 ) -> tuple[LoopOutcome, FinalizeIn, CriticVerdict]:
     """The one bounded re-entry (arch M9), and its second verdict.
@@ -784,6 +786,10 @@ async def _second_pass(
         record_finding=keep,
         settings=settings,
     )
+    # Re-entry adds evidence; it must not erase the first pass's results
+    # (B-189). Keep the same bounded window as an uninterrupted investigation.
+    previews = dict((*previous.previews, *outcome.previews))
+    outcome = replace(outcome, previews=tuple(previews.items())[-COMPOSE_PREVIEWS:])
     draft = await _compose(
         context, events, working, outcome, bundle, settings, correction=verdict.reasons()
     )
@@ -899,6 +905,10 @@ async def _compose(
         + READABLE_ANSWER_RULE
         + PARTIAL_RESULT_RULE
     )
+    from dataagent.agent.reviews import REVIEW_DISPLAY, review_requested
+
+    if review_requested(state.question):
+        prompt += f"\n\n{REVIEW_DISPLAY}"
     completion = await llm.complete(
         role="compose",
         org_id=context.org_id,
@@ -1022,8 +1032,9 @@ READABLE_ANSWER_RULE = (
     # `encodable` now trims the representation error before the model sees it,
     # so this is about the other half: a number a person reads should be written
     # the way money is written.
-    "Write money as **RM 310,817** — the currency, thousands separated, and "
-    "rounded to whole ringgit unless the figure is under RM 100. Write weights "
+    "Write money in the requested or evidenced currency, for example **USD 310,817**, "
+    "with thousands separated and rounded to whole units unless the figure is "
+    "under 100. Do not guess a currency or convert amounts without evidence. Write weights "
     "as **1,973 kg**. Never print more decimal places than the number deserves; "
     "a total to eleven decimals is noise wearing the clothes of precision. Do "
     "not invent precision the evidence does not have either — if a figure is "

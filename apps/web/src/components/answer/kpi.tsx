@@ -99,11 +99,15 @@ export function KpiGrid({ items }: { items: Kpi[] }) {
         return (
           <div
             key={`${item.label}-${index}`}
-            className="relative min-w-0 animate-fade-up overflow-hidden rounded-lg border border-border bg-surface px-4 pt-3.5 pb-3 shadow-[0_1px_2px_rgba(var(--shadow-rgb),.05)]"
+            className="relative min-w-0 animate-fade-up overflow-hidden rounded-lg border border-border bg-surface px-4 pt-3.5 pb-3 shadow-[0_1px_2px_rgba(var(--shadow-rgb),.05)] [container-type:inline-size]"
             style={{ animationDelay: `${index * 70}ms` }}
           >
             <div className="truncate text-[12.5px] font-medium text-muted-foreground">{item.label}</div>
-            <div className="mt-1 truncate font-serif text-[28px] leading-tight font-semibold tracking-[-0.01em] text-text tabular-nums">
+            <div
+              className="mt-1 break-words font-serif leading-tight font-semibold tracking-[-0.01em] text-text tabular-nums"
+              style={{ fontSize: `clamp(14px, ${180 / Math.max(1, item.value.length)}cqi, 28px)` }}
+              title={item.value}
+            >
               <CountUp text={item.value} />
             </div>
             {(item.delta || item.note) && (

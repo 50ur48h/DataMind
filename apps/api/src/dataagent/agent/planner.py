@@ -155,6 +155,10 @@ async def plan_query(
     """
     messages = list(render(bundle))
     task = _TASK if repair_of is None else f"{_TASK}\n\n{repair_of}"
+    from dataagent.agent.reviews import REVIEW_EVIDENCE, review_requested
+
+    if review_requested(bundle.question):
+        task += f"\n\n{REVIEW_EVIDENCE}"
     # The tool list goes in the system turn: it describes what exists, which is
     # world rather than task, and putting it beside the question would let a
     # crafted question sit next to the capability list.

@@ -91,7 +91,7 @@ class FinalizeIn(BaseModel):
 
     answer: str = Field(
         min_length=1,
-        max_length=4000,
+        max_length=8000,
         description=(
             "The answer, in plain words, for the person who asked. If you could "
             "not answer, say what is missing instead — do not guess. Write about "

@@ -144,6 +144,7 @@ function rowsOf(table: HastNode): { columns: string[]; rows: string[][] } {
 const METRIC_HEADER = /^(metrics?|measures?|kpis?|indicators?|key figures?|figures?|stats?|statistics?)$/i;
 const VALUE_HEADER = /^(values?|amounts?|totals?|results?)$/i;
 const CHANGE_HEADER = /(change|vs\.?|delta|growth|difference|trend)/i;
+const COMPARISON_HEADER = /^(comparison|baseline|period|note)$/i;
 
 /** "$1.42M (+6.2%)" → the value and its change. */
 function splitDelta(label: string, value: string): Kpi {
@@ -168,11 +169,16 @@ export function kpisFrom(columns: string[], rows: string[][]): Kpi[] | null {
   if (!metricTable) return null;
   if (rows.some((row) => !(row[0] ?? "").trim() || !(row[1] ?? "").trim())) return null;
   if (columns.length === 2) return rows.map(([label = "", value = ""]) => splitDelta(label, value));
-  if (columns.length === 3 && CHANGE_HEADER.test(columns[2] ?? "")) {
-    return rows.map(([label = "", value = "", delta = ""]) => ({
+  if (
+    (columns.length === 3 ||
+      (columns.length === 4 && COMPARISON_HEADER.test((columns[3] ?? "").trim()))) &&
+    CHANGE_HEADER.test(columns[2] ?? "")
+  ) {
+    return rows.map(([label = "", value = "", delta = "", note = ""]) => ({
       label,
       value,
       ...(delta.trim() ? { delta: delta.trim() } : {}),
+      ...(note.trim() ? { note: note.trim() } : {}),
     }));
   }
   return null;

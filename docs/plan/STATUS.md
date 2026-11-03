@@ -1,5 +1,47 @@
 # STATUS — DataMind build
 
+## Current work — Calm business reviews (B-188, B-189; 2026-11-03)
+
+Implemented locally on `b188-calm-performance-report`, ready for owner review. The owner
+requested the design's summary → four KPIs → interpretation → outlet bar chart
+→ interpretation → daily line chart → takeaways in the real app, with USD for
+the presentation. This uses the existing Markdown-to-cards/charts renderer,
+not a second answer schema or a hard-coded demo.
+
+- A shared review contract reaches planning, reflection and composition. It
+  asks for full-population SQL summaries, bounded outlet movements and a narrow
+  daily series, with one definition, explicit periods and reconciliation.
+- Four-column KPI tables carry the comparison note into each card. Inline
+  charts stay beside the prose and retain their table view and downloads.
+  A browser walk caught the headline value ellipsized in a narrow card; values
+  now size to the card and wrap rather than silently hiding significant digits.
+- The answer bound rises from 4,000 to 8,000 characters so a daily month and
+  closing takeaways fit; model-call and output-token budgets do not change.
+- B-189: critic re-entry now preserves earlier result previews within the same
+  three-result window. A live review previously fetched all three datasets but
+  composed only from the final one after re-entry, discarding the totals.
+- Live inspection also found a period self-join multiplying summary rows.
+  Guidance now requires one row per outlet and reconciliation; deterministic
+  detection is deferred as B-190. Prompt guidance is not an accuracy guarantee.
+- Final browser verification reached four cards, an eight-outlet bar chart and
+  all daily rows, using a report longer than the old answer cap. The company
+  total and daily total reconciled. Critic re-entry kept all three datasets.
+  The stale removed-`answered` instruction is also corrected, matching PR #8.
+  Review commentary about figures not used in the final report still leaked
+  into limitations and made the outcome partial: B-191 records that separately.
+
+Validation: API agent suite, ruff lint/format and strict pyright pass; web eslint,
+typecheck and all 299 tests pass. A fresh development token was needed after
+API restarts during the walk. The live presentation prompt/report stays local.
+
+Tests cover the actual prompts and returned run view, including a report over
+the old character cap; re-entry preserving three cited results; and a returned
+chat message rendering four cards followed by two inline charts and source
+tables. Customer-specific runs, diagnostic SQL and presentation material remain
+under gitignored `.SampleData/`. No new dependencies, migrations or secrets.
+
+Plan/architecture: Phase 13, architecture Parts 4.2–4.5 and 4.8; no deviation.
+
 ## Current bug fix — B-185 (2026-11-03, pending owner review)
 
 A period-only performance question could select no table cards, then refuse

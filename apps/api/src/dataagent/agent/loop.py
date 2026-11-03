@@ -790,6 +790,10 @@ async def _reflect(
         "is still open. Keep the rationale to one short public sentence — it is "
         "shown to the person who asked."
     )
+    from dataagent.agent.reviews import REVIEW_EVIDENCE, review_requested
+
+    if review_requested(state.question):
+        prompt += f"\n\n{REVIEW_EVIDENCE}"
     completion = await llm.complete(
         role="plan",
         org_id=context.org_id,

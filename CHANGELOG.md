@@ -9,6 +9,10 @@ under "Unreleased", only for changes a user would notice.
 
 ## [Unreleased]
 
+- Business reviews can interleave KPI cards, outlet comparisons and daily trend
+  charts with commentary; comparison labels and earlier evidence survive through
+  the final answer, with room for a complete monthly report.
+
 - Broad questions that match no table descriptions now receive a bounded catalog
   overview before the agent decides whether it can answer; sample dates are no
   longer presented to the planner as a basis for inventing a missing period.
