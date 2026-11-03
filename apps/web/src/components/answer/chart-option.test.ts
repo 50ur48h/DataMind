@@ -142,6 +142,36 @@ describe("how a table cell reads", () => {
 });
 
 describe("a chart drawn from an answer's own table", () => {
+  it("plots matching sales columns together, excluding orders and comparison notes", () => {
+    const derived = deriveChart(
+      ["Month", "Outlet A orders", "Outlet A sales", "Outlet B orders", "Outlet B sales", "Ahead"],
+      [["Jan 2025", "10", "1,000", "20", "900", "A"],
+        ["Feb 2025", "12", "1,200", "22", "1,300", "B"],
+        ["Mar 2025", "14", "1,400", "24", "1,100", "A"]],
+    );
+    const built = buildChart(derived!.spec, readChartTheme());
+    const series = built!.option.series as (Series & { name: string })[];
+    expect(series.map(({ name, data }) => ({ name, data }))).toEqual([
+      { name: "Outlet A sales", data: [1000, 1200, 1400] },
+      { name: "Outlet B sales", data: [900, 1300, 1100] },
+    ]);
+    expect(built!.title).toBe("Sales by month");
+    expect(built!.option.legend).toBeDefined();
+    expect(new Set(series.map((entry) => entry.lineStyle?.color)).size).toBe(2);
+  });
+
+  it("does not combine different currencies or sales definitions", () => {
+    for (const [headers, amounts] of [
+      [["Outlet A sales", "Outlet B sales"], ["$100", "€200"]],
+      [["Outlet A net sales", "Outlet B gross sales"], ["$100", "$200"]],
+    ]) {
+      const derived = deriveChart(["Month", ...headers!],
+        ["Jan 2025", "Feb 2025", "Mar 2025"].map((month) => [month, ...amounts!]));
+      const built = buildChart(derived!.spec, readChartTheme());
+      expect(built!.option.series as Series[]).toHaveLength(1);
+    }
+  });
+
   it("draws a period against a figure as a line, in the table's own unit", () => {
     const derived = deriveChart(
       ["Month", "Total sales"],

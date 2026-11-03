@@ -943,6 +943,36 @@ describe("how an answer is rendered", () => {
     expect(answer.querySelector("code mark")).toBeNull();
   });
 
+  it("renders both comparison lines from the returned message, with a legend and the original table", async () => {
+    echartsInit.mockClear();
+    const markdown = [
+      "| Month | Outlet A orders | Outlet A sales | Outlet B orders | Outlet B sales | Ahead |",
+      "| --- | --- | --- | --- | --- | --- |",
+      "| Jan 2025 | 10 | **1,000** | 20 | **900** | A |",
+      "| Feb 2025 | 12 | **1,200** | 22 | **1,300** | B |",
+      "| Mar 2025 | 14 | **1,400** | 24 | **1,100** | A |",
+    ].join("\n");
+    routeFetch({ run: { ...ANSWERED, answer: markdown, chart: null },
+      messages: [MESSAGES[0], { ...MESSAGES[1], content: markdown }] });
+    render(<ConversationThread orgId="o1" conversationId="c1" />);
+    await screen.findByTestId("table-chart");
+    await waitFor(() => expect(echartsInit.mock.results[0]?.value.setOption).toHaveBeenCalled());
+    const option = echartsInit.mock.results[0]!.value.setOption.mock.calls[0]![0] as unknown as {
+      legend: unknown;
+      series: { name: string; type: string; data: number[]; lineStyle: { color: string } }[];
+    };
+    expect(option.legend).toBeDefined();
+    expect(option.series.map(({ name, type, data }) => ({ name, type, data }))).toEqual([
+      { name: "Outlet A sales", type: "line", data: [1000, 1200, 1400] },
+      { name: "Outlet B sales", type: "line", data: [900, 1300, 1100] },
+    ]);
+    expect(new Set(option.series.map((series) => series.lineStyle.color)).size).toBe(2);
+    fireEvent.click(screen.getByRole("button", { name: /^Table$/ }));
+    expect(screen.getByRole("cell", { name: "1,000" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "900" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Outlet A orders" })).toBeInTheDocument();
+  });
+
   it("renders a business review from the returned message as four cards and interleaved charts", async () => {
     const markdown = [
       "Sales grew, with one outlet needing attention.",

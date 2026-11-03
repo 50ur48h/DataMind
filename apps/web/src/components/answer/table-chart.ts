@@ -47,6 +47,13 @@ function unitsOf(cells: string[]): { prefix: string; suffix: string } {
   return { prefix: currency.length > 1 ? `${currency} ` : currency, suffix };
 }
 
+/** Repeated measure labels identify comparable columns, without mixing orders
+ * into sales or gross sales into net sales on the same axis. */
+function measureOf(header: string): string | null {
+  return /\b(net sales|gross sales|total sales|sales|revenue|order count|orders|average order value|average order|profit|units|quantity)\s*$/i
+    .exec(header.trim())?.[1]?.toLowerCase() ?? null;
+}
+
 /** The chart a table supports, or null when it supports none. */
 export function deriveChart(columns: string[], rows: string[][]): DerivedChart | null {
   if (rows.length < 3 || rows.length > 40 || columns.length < 2) return null;
@@ -89,18 +96,32 @@ export function deriveChart(columns: string[], rows: string[][]): DerivedChart |
 
   if (periodIndex >= 0) {
     const periods = labels.map((label) => periodOf(label)!);
+    const measure = measureOf(valueHeader);
+    const comparable = candidates.filter(({ header, index }) => {
+      const units = unitsOf(cellsOf(index));
+      return !isDeltaColumn(header, cellsOf(index)) &&
+        units.prefix === usermeta.prefix && units.suffix === usermeta.suffix &&
+        measure !== null && measureOf(header) === measure;
+    });
+    const split = !delta && comparable.length > 1 && new Set(comparable.map(({ header }) => header)).size === comparable.length;
+    const title = split ? (measure ?? "Value") : valueHeader;
     return {
       label: labelHeader,
-      value: valueHeader,
+      value: title,
       spec: {
         mark: "line",
         usermeta,
-        title: `${valueHeader} by ${labelHeader.toLowerCase()}`,
+        title: `${title.charAt(0).toUpperCase()}${title.slice(1)} by ${labelHeader.toLowerCase()}`,
         encoding: {
           x: { field: field.x, type: "temporal", title: labelHeader, timeUnit: periods[0]!.unit },
-          y: { field: field.y, type: "quantitative", title: valueHeader },
+          y: { field: field.y, type: "quantitative", title },
+          ...(split ? { color: { field: "series", type: "nominal", title: "Series" } } : {}),
         },
-        data: { values: periods.map((period, index) => ({ label: period.iso, value: values[index] })) },
+        data: { values: split
+          ? comparable.flatMap(({ header, index }) => periods.map((period, row) => ({
+            label: period.iso, value: numberIn(rows[row]![index]!), series: header,
+          })))
+          : periods.map((period, index) => ({ label: period.iso, value: values[index] })) },
       },
     };
   }
