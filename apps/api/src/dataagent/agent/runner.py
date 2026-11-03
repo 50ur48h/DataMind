@@ -123,6 +123,13 @@ MAX_CRITIC_PASSES = 2
 #: **B-052** is a ceiling silently below what a schema needs.
 CRITIC_OUTPUT_TOKENS = 800
 
+#: The composed answer is the longest structured reply a run asks for: the prose,
+#: its citations and an optional chart ask, all in one JSON object. Left at
+#: `CallLimits`' 1024 default it was measured hitting the ceiling on 4 of 11 real
+#: composes, and both the first attempt and the repair came back cut mid-string
+#: (**B-052** again). Set explicitly, with room above the longest answer seen.
+COMPOSE_OUTPUT_TOKENS = 4096
+
 
 @dataclass(frozen=True, slots=True)
 class RunOutcome:
@@ -820,7 +827,7 @@ async def _compose(
     what an answer must acknowledge is given to the model, not hoped for.
     """
     from dataagent.llm import service as llm
-    from dataagent.llm.base import Message
+    from dataagent.llm.base import CallLimits, Message
 
     state, budget = working.state, working.budget
     evidence = (
@@ -895,6 +902,7 @@ async def _compose(
         run_id=context.run_id,
         actor_user_id=context.actor_user_id,
         settings=settings,
+        limits=CallLimits(max_output_tokens=COMPOSE_OUTPUT_TOKENS),
     )
     budget.spend_llm(completion.usage.total_tokens)
     return completion.parsed_as(FinalizeIn)

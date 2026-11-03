@@ -38,7 +38,7 @@ from dataagent.agent.budget import DEFAULT_ITERATIONS
 from dataagent.agent.critic import CriticOut
 from dataagent.agent.loop import ReflectFinding, Reflection
 from dataagent.agent.planner import Plan
-from dataagent.agent.runner import RunOutcome, execute_run
+from dataagent.agent.runner import COMPOSE_OUTPUT_TOKENS, RunOutcome, execute_run
 from dataagent.agent.tools.base import ToolContext
 from dataagent.agent.tools.finalize import FinalizeIn
 from dataagent.llm.base import LLMError
@@ -1032,6 +1032,25 @@ async def test_a_run_that_passes_is_criticised_once_and_left_alone(
     assert verdicts[0].payload["consulted_model"] is True
     assert len(fake_llm.calls_for("compose")) == 1
     assert outcome.state == "answered"
+
+
+async def test_the_composer_has_room_for_a_whole_answer(
+    context: ToolContext, fake_llm: FakeLLM
+) -> None:
+    """**B-052, for the composer.** Left at the 1024 default, real composes were
+    cut mid-string on both the first attempt and the repair, and the run failed
+    with JSON that never closed. The ceiling is the runner's to set, so it is
+    asserted on the request the runner sent."""
+    fake_llm.script(_plan("SELECT count(*) AS n FROM shops"), role="sql", times=1)
+    fake_llm.script(_reflect(), role="plan", times=1)
+    fake_llm.script(_cites_the_execution, role="compose", times=1)
+    fake_llm.script(_passes(), role="critic", times=1)
+
+    await _execute(context, await _run_for(context, "How many shops are there?"))
+
+    limits = fake_llm.calls_for("compose")[0].request.limits
+    assert limits.max_output_tokens == COMPOSE_OUTPUT_TOKENS
+    assert limits.max_output_tokens > 1024
 
 
 async def test_the_verdict_schema_is_enforced(context: ToolContext, fake_llm: FakeLLM) -> None:
